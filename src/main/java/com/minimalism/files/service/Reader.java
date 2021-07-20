@@ -1,6 +1,5 @@
 package com.minimalism.files.service;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.BufferUnderflowException;
@@ -24,6 +23,9 @@ import com.minimalism.files.domain.SlicerConfigurationInformation;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * The <em>Reader</em> class in the primary service class for the slice-and-dice utility. This Service Class 
  * supports three types of input files:
@@ -38,6 +40,8 @@ import com.minimalism.files.exceptions.NoSuchPathException;
  * 
  */
 public class Reader {
+    private static Logger logger = LoggerFactory.getLogger(Reader.class);
+    
     InputFileInformation inputFileInformation;
     SlicerConfigurationInformation slicerConfguration;
     RecordDescriptor recordDescriptor;
@@ -101,9 +105,10 @@ public class Reader {
      * @throws FileTypeNotSupportedException
      */
     public long read() throws IOException, FileTypeNotSupportedException {
-        System.out.println(this.inputFileInformation.getFilePath());
+        logger.info(this.inputFileInformation.getFilePath().toString());
+
         Map<Integer, ByteBuffer> recordsFromFile = null;
-        long bytesRead = 0;
+
         if(inputFileInformation.getFileType() == FileTypes.CSV) {
             recordsFromFile = readCSVFile();
         } else if(inputFileInformation.getFileType() == FileTypes.BIN) {
@@ -114,13 +119,11 @@ public class Reader {
             throw new FileTypeNotSupportedException(String.format("The input file type: %s is not supported. This utility works with comma-separated, binary and text files only.", inputFileInformation.getFileType().name()));
         }
         if(recordsFromFile != null) {
-            bytesRead = recordsFromFile.size();
-        } else {
-            bytesRead = 0;
+            logger.info("Number of records read: %s", recordsFromFile.size());
+            InputRecordFormatter formatter = new InputRecordFormatter();
+            formatter.format(recordsFromFile, recordDescriptor);
         }
-        InputRecordFormatter formatter = new InputRecordFormatter();
-        formatter.format(recordsFromFile, recordDescriptor);
-        return bytesRead;
+        return recordsFromFile != null ? recordsFromFile.size() : 0;
     }
 
     

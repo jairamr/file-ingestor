@@ -12,7 +12,6 @@ public class InputRecordFormatter {
 
     
     /** 
-     * @param Map<Integer
      * @param inputFileRecords
      * @param recordDescriptor
      * @return Map<Integer, List<String>>
@@ -35,9 +34,8 @@ public class InputRecordFormatter {
             ByteBuffer inputRecord = inputFileRecords.get(i);
 
             while(inputRecord.hasRemaining()) {
-                if(inputRecord.get() != fieldSeparator) {
-                    continue;
-                } else {
+                if(inputRecord.get() == fieldSeparator) {
+
                     fieldEndIndex = inputRecord.position() - 1;
                     int fieldLength = fieldEndIndex - fieldStartIndex;
                     byte[] currentField = new byte[fieldLength];
@@ -58,7 +56,6 @@ public class InputRecordFormatter {
             }
             records.put(recordNumber++, fieldsInRecord);
         }
-        System.out.println(String.format("Number of records: %d", records.size()));
         return records;
     }
 }

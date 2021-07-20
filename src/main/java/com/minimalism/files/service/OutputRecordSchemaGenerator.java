@@ -1,7 +1,5 @@
 package com.minimalism.files.service;
 
-import java.util.Set;
-
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -25,10 +23,10 @@ public class OutputRecordSchemaGenerator {
     public JsonObject createAvroSchema(RecordDescriptor inputRecordDescriptor, String recordName) {
         
         if(recordName.contains(" ")) {
-            recordName = recordName.replaceAll(" ", "_");
+            recordName = recordName.replace(" ", "_");
         }
         if(recordName.contains("-")) {
-            recordName = recordName.replaceAll("-","_");
+            recordName = recordName.replace("-","_");
         }
         String namespace = this.clientName.concat(".").concat(recordName).concat(".avro");
         
@@ -36,13 +34,11 @@ public class OutputRecordSchemaGenerator {
         for(FieldDescriptor fd : inputRecordDescriptor.getFieldDescriptors()) {
             fieldsBuilder.add(fd.asJson());
         }
-        JsonObject avroSchema = Json.createObjectBuilder()
+        return Json.createObjectBuilder()
         .add("namespace", namespace)
         .add("type", "record")
         .add("name", recordName)
         .add("fields", fieldsBuilder)
         .build();
-
-        return avroSchema;
     }
 }
