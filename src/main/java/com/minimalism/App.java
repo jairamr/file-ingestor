@@ -7,9 +7,12 @@ import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.service.Reader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class App 
 {
-    
+    private static Logger logger = LoggerFactory.getLogger(App.class);
     /** 
      * @param args
      */
@@ -18,11 +21,12 @@ public class App
         long startTime = System.currentTimeMillis();
         Reader reader;
         try {
-            reader = new Reader("client_1", "_HrData_Kaggle_Hr5m.csv", true);
+            reader = new Reader("client_1", "_HrData_Kaggle_Hr1m.csv", true);
             long byteCount = reader.read();
             double duration = (double)(System.currentTimeMillis() - startTime);
-            System.out.println(String.format("Read %d bytes in %f seconds", byteCount, duration/1000));
-        }catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException e) {
+            logger.info("Read {} bytes in {} seconds", byteCount, duration/1000);
+        }catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException e) {
+            Thread.currentThread().interrupt();
             e.printStackTrace();
         }
     }

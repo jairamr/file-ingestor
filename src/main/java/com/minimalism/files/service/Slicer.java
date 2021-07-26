@@ -95,10 +95,14 @@ public class Slicer {
         bufferSize = (int)inputFileInformation.getFileSize() / targetThreadCount;
         
         //In case there are residual bytes (due to division) we increase the buffer size by additional 100 bytes
-        if(inputFileInformation.getFileSize() % targetThreadCount > 0)
-            bufferSize += 100;
+        long residualBytes = inputFileInformation.getFileSize() % targetThreadCount;
+        if(residualBytes > 0)
+            bufferSize += residualBytes;
 
         return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
             this.inputFileInformation.getFileSize(), 1, availableCores);
+        
+        // return new SlicerConfigurationInformation(1, (int)this.inputFileInformation.getFileSize(), 
+        //     this.inputFileInformation.getFileSize(), 1, 1);
     }
 }

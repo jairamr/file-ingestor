@@ -2,19 +2,23 @@ package com.minimalism.files.service;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import com.minimalism.common.AppConfigHelper;
 import com.minimalism.common.AllEnums.FileTypes;
 import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.domain.InputFileInformation;
@@ -45,6 +49,7 @@ public class Reader {
     InputFileInformation inputFileInformation;
     SlicerConfigurationInformation slicerConfguration;
     RecordDescriptor recordDescriptor;
+    String operatingMode;
 
     public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException {
         
@@ -73,7 +78,8 @@ public class Reader {
         } catch (NoSuchPathException e) {
             throw e;
         }
-                
+        
+        this.operatingMode = AppConfigHelper.getInstance().getServiceOperatingMode();
         BasicFileAttributeView basicView = Files.getFileAttributeView(fullPath, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
             
         this.inputFileInformation = new InputFileInformation(fullPath.getParent(), fileName, 
@@ -103,110 +109,111 @@ public class Reader {
      * @return long
      * @throws IOException
      * @throws FileTypeNotSupportedException
+     * @throws InterruptedException
      */
-    public long read() throws IOException, FileTypeNotSupportedException {
-        logger.info(this.inputFileInformation.getFilePath().toString());
+    public long read() throws IOException, FileTypeNotSupportedException, InterruptedException {
+        logger.info("Reading input file: {}", this.inputFileInformation.getFilePath());
 
-        Map<Integer, ByteBuffer> recordsFromFile = null;
+        long numberofRecordsProcessed = 0;
 
         if(inputFileInformation.getFileType() == FileTypes.CSV) {
-            recordsFromFile = readCSVFile();
+            if(this.operatingMode.equalsIgnoreCase("single")) {
+                processFile(FileTypes.CSV);
+            } else {
+                sliceAndProcessFile(FileTypes.CSV);
+            }
         } else if(inputFileInformation.getFileType() == FileTypes.BIN) {
-            readBinaryFile();
+            // process binary data file
         } else if(inputFileInformation.getFileType() ==FileTypes.TEXT) {
-            readTextFile();
+            // process text file
         } else {
             throw new FileTypeNotSupportedException(String.format("The input file type: %s is not supported. This utility works with comma-separated, binary and text files only.", inputFileInformation.getFileType().name()));
         }
-        if(recordsFromFile != null) {
-            logger.info("Number of records read: %s", recordsFromFile.size());
-            InputRecordFormatter formatter = new InputRecordFormatter();
-            formatter.format(recordsFromFile, recordDescriptor);
-        }
-        return recordsFromFile != null ? recordsFromFile.size() : 0;
+        
+        return numberofRecordsProcessed;
     }
 
-    
-    /** 
-     * @return Map<Integer, ByteBuffer>
-     * @throws IOException
-     */
-    private Map<Integer, ByteBuffer> readCSVFile() throws IOException {
-        Map<Integer, ByteBuffer> recordsFromFile = null;
-
-        try(RandomAccessFile inputFile = new RandomAccessFile(inputFileInformation.getFilePath().toString(), "r")) {
-            FileChannel fcInputFile = inputFile.getChannel();
-        
-            byte[] recordSeparators = this.recordDescriptor.getRecordSeparator();
-        
-            if(recordSeparators[1] != 0x00) {
-                recordsFromFile = processTwoCharRecordSeparator(fcInputFile);
-            } else {
-            
+    private void processFile(FileTypes fileType) throws IOException {
+        if(fileType == FileTypes.CSV) {
+            IFileReader reader = new CSVFileReader(0, inputFileInformation, slicerConfguration.getThreadReadBufferSize());
+            InputBufferReadStatus readStatus = reader.read(inputFileInformation, recordDescriptor);
+            if(readStatus != null) {
+                logger.info("{}", readStatus);
             }
         }
-        
-        return recordsFromFile;
     }
 
-    
-    /** 
-     * @param fcInputFile
-     * @param bufferSize
-     * @return Map<Integer, ByteBuffer>
-     */
-    private Map<Integer, ByteBuffer> processTwoCharRecordSeparator(FileChannel fcInputFile) {
+    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException {
+        int bufferSize = slicerConfguration.getThreadReadBufferSize();
+        int numberOfBuffers = slicerConfguration.getNumberOfThreads();
+        long thisBatchOffsetInFile = 0;
 
-        Map<Integer, ByteBuffer> returnValue = new HashMap<>();
+        ExecutorService inputBufferReaderService = null;
 
-        long bytesRead = 0;
-        ByteBuffer recordBuffer;
-        byte fromFile = 0;
-        int recordStart = 0;
-        int recordEnd = 0;
-        int recordNumber = 0;
-        boolean headersHandled = false;
-        
-        try {
-            MappedByteBuffer mbb = fcInputFile.map(MapMode.READ_ONLY, 0, fcInputFile.size());
+        try { 
+            inputBufferReaderService = Executors.newFixedThreadPool(numberOfBuffers);
             
-            while(mbb.hasRemaining()) {
-                fromFile = mbb.get();
-                if(fromFile == '\r') {
-                    byte lf = mbb.get();
-                    if(lf == '\n') {
-                        recordEnd = mbb.position() - 2;
-                        int recordLength = recordEnd - recordStart;
-                        bytesRead += recordLength; // these are useful bytes.. without record separators
-                        // If header row is present, we want to ignore it.
-                        if(this.inputFileInformation.isHeaderPresent() && !headersHandled) { 
-                            headersHandled = true;
-                            recordStart = mbb.position();
-                            continue;
-                        }
-                        byte[] temp = new byte[recordLength];
-                        mbb.position(recordStart);
-                        mbb.get(temp, 0, recordLength);
-                        recordBuffer = ByteBuffer.wrap(temp);
-                        returnValue.put(recordNumber++, recordBuffer);
-                        mbb.position(recordStart + recordLength + 2);
-                        recordStart = mbb.position();
-                    } // else... nothing. Until end-of-record is found, keep reading bytes... 
+            for(int iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
+                thisBatchOffsetInFile = iteration * (long)bufferSize * numberOfBuffers;
+                List<Callable<InputBufferReadStatus>> workers = Collections.emptyList();
+                if(iteration == 0) {
+                    workers = prepareWorkers(fileType, thisBatchOffsetInFile, iteration);
+                } else {
+                    resetWorkers(workers, thisBatchOffsetInFile, iteration);
                 }
+                List<Future<InputBufferReadStatus>> iterationResults = inputBufferReaderService.invokeAll(workers);
+                //process the outcome of each iteration
+                iterationResults.stream().forEach(i -> {
+                    try {
+                        logger.info((i.get().toString()));
+                    } catch (InterruptedException | ExecutionException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+               
             }
-        } catch(BufferUnderflowException bue) { 
-            System.out.println(bytesRead);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } finally {
+            if(inputBufferReaderService != null)
+                shutdownAndAwaitTermination(inputBufferReaderService);
+        }
+    }
+
+    private void shutdownAndAwaitTermination(ExecutorService pool) {
+        pool.shutdown(); // Disable new tasks from being submitted
+        try {
+          // Wait a while for existing tasks to terminate
+          if (!pool.awaitTermination(60, TimeUnit.MILLISECONDS)) {
+            pool.shutdownNow(); // Cancel currently executing tasks
+            // Wait a while for tasks to respond to being cancelled
+            if (!pool.awaitTermination(60, TimeUnit.MILLISECONDS))
+                logger.error("Pool did not terminate");
+          }
+        } catch (InterruptedException ie) {
+          // (Re-)Cancel if current thread also interrupted
+          pool.shutdownNow();
+          // Preserve interrupt status
+          Thread.currentThread().interrupt();
+        }
+      }
+
+    private List<Callable<InputBufferReadStatus>> prepareWorkers(FileTypes fileType, 
+                                                    long thisBatchOffsetInFile, int iteration) {
+        List<Callable<InputBufferReadStatus>> returnValue = new ArrayList<>();
+
+        int bufferSize = slicerConfguration.getThreadReadBufferSize();
+        int numberOfBuffers = slicerConfguration.getNumberOfThreads();
+
+        for(int workerId = 0; workerId < numberOfBuffers; workerId++) {
+            if(fileType == FileTypes.CSV) {
+                IFileReader reader = new CSVFileReader(workerId, inputFileInformation, bufferSize);
+                Worker worker = new Worker(thisBatchOffsetInFile, iteration, reader, recordDescriptor);
+                returnValue.add(worker);
+            }
         }
         return returnValue;
     }
-    
-    private void readBinaryFile() {
 
-    }
-
-    private void readTextFile() {
-
+    private void resetWorkers(List<Callable<InputBufferReadStatus>> workers, long offsetInFile, int iteration) {
+        workers.stream().forEach(w -> ((Worker)w).reset(offsetInFile, iteration));
     }
 }

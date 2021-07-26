@@ -8,34 +8,36 @@ import java.util.Map;
 
 import com.minimalism.files.domain.RecordDescriptor;
 
-public class InputRecordFormatter {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+public class InputRecordFormatter {
+    private static Logger logger = LoggerFactory.getLogger(InputRecordFormatter.class);
     
     /** 
      * @param inputFileRecords
      * @param recordDescriptor
      * @return Map<Integer, List<String>>
      */
-    public Map<Integer, List<String>> format(Map<Integer, ByteBuffer> inputFileRecords, RecordDescriptor recordDescriptor) {
-        Map<Integer, List<String>> records = new HashMap<>();
+    public void format(Map<Integer, ByteBuffer> inputFileRecords, RecordDescriptor recordDescriptor) {
+        long startTime = System.currentTimeMillis();
+        Map<Integer, List<String>> records = new HashMap<>(30000);
         
         byte fieldSeparator = recordDescriptor.getFieldSeperator();
 
-        int recordNumber = 0;
+        Integer recordNumber = Integer.valueOf(0);
         
-        for (int i = 0; i < inputFileRecords.size(); i++) {
-            if(records.size() % 101 == 0) records.clear();
-            int fieldStartIndex = 0;
-            int fieldEndIndex = 0;
-            int fieldPosition = 0;
-        
-            ArrayList<String> fieldsInRecord = new ArrayList<>();
+        for (var i = 0; i < inputFileRecords.size(); i++) {
+            var fieldStartIndex = 0;
+            var fieldEndIndex = 0;
+            var fieldPosition = 0;
+
+            ArrayList<String> fieldsInRecord = new ArrayList<>(recordDescriptor.getFieldDescriptors().size());
             
             ByteBuffer inputRecord = inputFileRecords.get(i);
-
+            
             while(inputRecord.hasRemaining()) {
                 if(inputRecord.get() == fieldSeparator) {
-
                     fieldEndIndex = inputRecord.position() - 1;
                     int fieldLength = fieldEndIndex - fieldStartIndex;
                     byte[] currentField = new byte[fieldLength];
@@ -54,8 +56,10 @@ public class InputRecordFormatter {
                 inputRecord.get(currentField, 0, fieldEndIndex - fieldStartIndex);
                 fieldsInRecord.add(fieldPosition, new String(currentField));
             }
-            records.put(recordNumber++, fieldsInRecord);
+            records.put(recordNumber, fieldsInRecord);
+            recordNumber = Integer.valueOf(recordNumber.intValue() + 1);
         }
-        return records;
+        logger.info("Formatter took {} milliseconds.", System.currentTimeMillis() - startTime);
+        //return records;
     }
 }

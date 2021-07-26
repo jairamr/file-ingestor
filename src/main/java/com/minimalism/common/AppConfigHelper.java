@@ -10,19 +10,19 @@ public class AppConfigHelper {
     private static String SERVICE_ROOT_DIRECTORY = "service.root.directory";
     private static String THREADS_LOADING_FACTOR = "threads.loading.factor";
     private static String FILE_READ_BUFFER_SISE = "file.read.buffer.size";
+    private static String SERVICE_OPERATING_MODE = "service.operating.mode";
     private static int KB_SCALER = 1024;
     
     private static AppConfigHelper instance;
-    private static Properties serviceProperties;
+    private static Properties serviceProperties = new Properties();
     
     private AppConfigHelper() throws IOException {
-        serviceProperties = new Properties();
         Path basePath = Paths.get(".").toAbsolutePath();
         Path toPropertiesFile = basePath.resolve("src/main/resources/app.properties");
-        FileReader reader = new FileReader(toPropertiesFile.toString());
-        serviceProperties.load(reader);
+        try(FileReader reader = new FileReader(toPropertiesFile.toString())) {
+            serviceProperties.load(reader);
+        }
     }
-
     
     /** 
      * @return AppConfigHelper
@@ -57,5 +57,9 @@ public class AppConfigHelper {
      */
     public Path getServiceRootDirectory() {
         return Paths.get(serviceProperties.getProperty(SERVICE_ROOT_DIRECTORY));
+    }
+
+    public String getServiceOperatingMode() {
+        return serviceProperties.getProperty(SERVICE_OPERATING_MODE);
     }
 }

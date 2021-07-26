@@ -156,12 +156,10 @@ public class FieldDescriptor {
      * @return JsonObject
      */
     public JsonObject asJson() {
-        JsonObject me = Json.createObjectBuilder()
+        return Json.createObjectBuilder()
         .add("fieldName", this.getFieldName())
         .add("dataType", this.getDatatype().name().toLowerCase())
         .build();
-
-        return me;
     }
 
     
