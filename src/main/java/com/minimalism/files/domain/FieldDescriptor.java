@@ -134,6 +134,9 @@ public class FieldDescriptor {
                                 this.minimumLength, this.maximumLength, this.nullAllowed);
     }
 
+    public String getFieldNameForAvro() {
+        return this.fieldName.replaceAll("[ -]", "_");
+    }
     
     /** 
      * @param other
@@ -157,8 +160,8 @@ public class FieldDescriptor {
      */
     public JsonObject asJson() {
         return Json.createObjectBuilder()
-        .add("fieldName", this.getFieldName())
-        .add("dataType", this.getDatatype().name().toLowerCase())
+        .add("name", this.getFieldNameForAvro())
+        .add("type", "string")
         .build();
     }
 

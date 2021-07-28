@@ -13,8 +13,7 @@ public class OutputRecordSchemaGeneratorTests {
     void testCreateAvroSchema() {
         RecordDescriptorReader reader = new RecordDescriptorReader();
         RecordDescriptor hrRecordDescriptor = reader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
-        OutputRecordSchemaGenerator iut = new OutputRecordSchemaGenerator("Client_1");
-        JsonObject result = iut.createAvroSchema(hrRecordDescriptor, "HrData");
+        JsonObject result = OutputRecordSchemaGenerator.createAvroSchema("Client_1", hrRecordDescriptor, "HrData");
         assertNotNull(result); 
     }
 }

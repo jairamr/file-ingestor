@@ -8,19 +8,14 @@ import com.minimalism.files.domain.FieldDescriptor;
 import com.minimalism.files.domain.RecordDescriptor;
 
 public class OutputRecordSchemaGenerator {
-    private String clientName;
 
-    public OutputRecordSchemaGenerator(String clientName) {
-        this.clientName = clientName;
-    }
-
-    
+    private OutputRecordSchemaGenerator(){}
     /** 
      * @param inputRecordDescriptor
      * @param recordName
      * @return JsonObject
      */
-    public JsonObject createAvroSchema(RecordDescriptor inputRecordDescriptor, String recordName) {
+    public static JsonObject createAvroSchema(String clientName, RecordDescriptor inputRecordDescriptor, String recordName) {
         
         if(recordName.contains(" ")) {
             recordName = recordName.replace(" ", "_");
@@ -28,7 +23,7 @@ public class OutputRecordSchemaGenerator {
         if(recordName.contains("-")) {
             recordName = recordName.replace("-","_");
         }
-        String namespace = this.clientName.concat(".").concat(recordName).concat(".avro");
+        String namespace = clientName.concat(".").concat(recordName).concat(".avro");
         
         JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder();
         for(FieldDescriptor fd : inputRecordDescriptor.getFieldDescriptors()) {
