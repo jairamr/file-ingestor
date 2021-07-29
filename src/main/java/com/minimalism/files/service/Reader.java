@@ -153,7 +153,7 @@ public class Reader {
             
             for(int iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
                 thisBatchOffsetInFile = iteration * (long)bufferSize * numberOfBuffers;
-                List<Callable<InputBufferReadStatus>> workers = Collections.emptyList();
+                List<Callable<InputBufferReadStatus>> workers = null;
                 if(iteration == 0) {
                     workers = prepareWorkers(fileType, thisBatchOffsetInFile, iteration);
                 } else {

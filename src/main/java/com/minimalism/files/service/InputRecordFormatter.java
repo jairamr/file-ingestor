@@ -4,11 +4,13 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.minimalism.files.domain.FieldDescriptor;
 import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.records.Employee;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -24,73 +26,72 @@ public class InputRecordFormatter {
      * @param recordDescriptor
      * @return Map<Integer, List<String>>
      */
-    public void format(Map<Integer, ByteBuffer> inputFileRecords, RecordDescriptor recordDescriptor) {
+    public List<Employee> format(Map<Integer, ByteBuffer> inputFileRecords, RecordDescriptor recordDescriptor) {
         long startTime = System.currentTimeMillis();
-        Map<Integer, GenericRecord> records = new HashMap<>(inputFileRecords.size());
-        
+        List<Employee> records = new ArrayList<>();
         byte fieldSeparator = recordDescriptor.getFieldSeperator();
 
         var recordNumber = 0;
 
-        try{
         for (var i = 0; i < inputFileRecords.size(); i++) {
             var fieldStartIndex = 0;
             var fieldEndIndex = 0;
             var fieldPosition = 0;
 
-            ArrayList<String> fieldsInRecord = new ArrayList<>();
+            ArrayList<String> fieldsInRecord = new ArrayList<>(recordDescriptor.getFieldDescriptors().size());
             
             ByteBuffer inputRecord = inputFileRecords.get(i);
             try{
-                while(inputRecord.hasRemaining()) {
-                    if(inputRecord.get() == fieldSeparator) {
-                        fieldEndIndex = inputRecord.position() - 1;
-                        int fieldLength = fieldEndIndex - fieldStartIndex;
-                        var currentField = new byte[fieldLength];
+                records.add(recordNumber++, new Employee(new String(inputRecord.array())));
+            } catch (Exception e) {
+                logger.error("Exception while adding employee record: message: {}, stack:{}", e.getMessage(), e.getStackTrace());
+            }
 
-                        inputRecord.position(fieldStartIndex);
-                        inputRecord.get(currentField, 0, fieldLength);
-                        
-                        fieldsInRecord.add(fieldPosition, new String(currentField));
-                        fieldPosition++;
-                        
-                        inputRecord.position(inputRecord.position() + 1);
-                        fieldStartIndex = inputRecord.position();
-                    }
-                }
-            } catch(BufferUnderflowException e) {
-                logger.error("Message: (), Cause: {}", e.getMessage(), e.getCause());
-                //last field will not have a separator
-                fieldEndIndex = inputRecord.position();
-                inputRecord.position(fieldStartIndex);
-                var currentField = new byte[fieldEndIndex - fieldStartIndex];
-                
-                inputRecord.get(currentField, 0, fieldEndIndex - fieldStartIndex);
-                
-                fieldsInRecord.add(fieldPosition, new String(currentField));
-            } 
-            records.put(recordNumber++, buildDomainObject(recordDescriptor, fieldsInRecord));
+        //     while(inputRecord.hasRemaining()) {
+        //         if(inputRecord.get() == fieldSeparator) {
+        //             fieldEndIndex = inputRecord.position() - 1;
+        //             int fieldLength = fieldEndIndex - fieldStartIndex;
+        //             var currentField = new byte[fieldLength];
+
+        //             inputRecord.position(fieldStartIndex);
+        //             inputRecord.get(currentField, 0, fieldLength);
+                    
+        //             fieldsInRecord.add(fieldPosition, new String(currentField));
+        //             fieldPosition++;
+                    
+        //             inputRecord.position(inputRecord.position() + 1);
+        //             fieldStartIndex = inputRecord.position();
+        //         }
+        //     }
+        //     //last field will not have a separator
+        //     fieldEndIndex = inputRecord.position();
+        //     inputRecord.position(fieldStartIndex);
+        //     var currentField = new byte[fieldEndIndex - fieldStartIndex];
+            
+        //     inputRecord.get(currentField, 0, fieldEndIndex - fieldStartIndex);
+            
+        //     fieldsInRecord.add(fieldPosition, new String(currentField));
+
+        //     records.add(recordNumber++, fieldsInRecord);
         }
-        } catch(Exception e) {
-            logger.error("Message: {}, Cause: {}", e.getMessage(), e.getStackTrace());
-        }
-        logger.info("Formatter took {} milliseconds.", System.currentTimeMillis() - startTime);
-        //return records;
-        if(recordNumber % 10000 == 0) {
-            logger.info("Fields: {}", records.get(recordNumber));
-        }
+        logger.info("Formatter took {} ms.", System.currentTimeMillis() - startTime);
+
+        return records;
     }
 
-    private GenericRecord buildDomainObject(RecordDescriptor recordDescriptor, ArrayList<String> fieldValues) {
+    private GenericRecord buildDomainObject(RecordDescriptor recordDescriptor, List<String> fieldValues) {
+        long startTime = System.currentTimeMillis();
         Set<FieldDescriptor> fieldDescriptors = recordDescriptor.getFieldDescriptors();
-        Schema schema = new Schema.Parser().parse(OutputRecordSchemaGenerator.createAvroSchema("Client_1", recordDescriptor, "HrData").toString()); 
+        var schema = new Schema.Parser().parse(OutputRecordSchemaGenerator.createAvroSchema("Client_1", recordDescriptor, "HrData").toString()); 
+        
         GenericRecord inputRecord = new GenericData.Record(schema);
-        for(FieldDescriptor fd : fieldDescriptors) {
-            if(Thread.currentThread().getName().equals("pool-1-thread-1")) {
-                System.out.println(Thread.currentThread().getName() + ": pos: " + fd.getPosition());
-            }
-            inputRecord.put(fd.getFieldNameForAvro(), fieldValues.get(fd.getPosition()));
-        }
+        fieldDescriptors.stream().forEach(fd -> {
+            inputRecord.put(fd.getPosition(), fieldValues.get(fd.getPosition()));
+        });
+        // for(FieldDescriptor fd : fieldDescriptors) {
+        //     inputRecord.put(fd.getFieldNameForAvro(), fieldValues.get(fd.getPosition()));
+        // }
+        logger.info("Build Domain object took: {} ms", System.currentTimeMillis() - startTime);
         return inputRecord;
     }
 }
