@@ -1,6 +1,7 @@
 {
     "record-type":"VARIABLE_LENGTH",
     "record-separator":"CRLF",
+    "entity-classname": "Employee",
     "field-separator":",",
     "field-descriptors":
     [

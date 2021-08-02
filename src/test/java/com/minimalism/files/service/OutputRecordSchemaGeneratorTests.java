@@ -11,8 +11,7 @@ import org.junit.jupiter.api.Test;
 public class OutputRecordSchemaGeneratorTests {
     @Test
     void testCreateAvroSchema() {
-        RecordDescriptorReader reader = new RecordDescriptorReader();
-        RecordDescriptor hrRecordDescriptor = reader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
+        RecordDescriptor hrRecordDescriptor = RecordDescriptorReader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
         JsonObject result = OutputRecordSchemaGenerator.createAvroSchema("Client_1", hrRecordDescriptor, "HrData");
         assertNotNull(result); 
     }

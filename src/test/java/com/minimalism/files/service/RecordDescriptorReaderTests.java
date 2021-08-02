@@ -18,8 +18,7 @@ public class RecordDescriptorReaderTests {
 
     @BeforeAll
     static void parseDefinitionFile() {
-        RecordDescriptorReader iut = new RecordDescriptorReader();
-        hrRecordDescriptor = iut.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
+        hrRecordDescriptor = RecordDescriptorReader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
     }
 
     @Test

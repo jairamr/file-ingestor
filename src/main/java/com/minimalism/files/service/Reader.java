@@ -1,5 +1,6 @@
 package com.minimalism.files.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -7,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -86,8 +86,7 @@ public class Reader {
         Slicer slicer = new Slicer(this.inputFileInformation);
         this.slicerConfguration = slicer.sliceFile();
 
-        RecordDescriptorReader recordDescriptionReader = new RecordDescriptorReader();
-        this.recordDescriptor = recordDescriptionReader.readDefinition(clientName, fileName);
+        this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
     }
 
     public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException {
@@ -132,13 +131,13 @@ public class Reader {
     }
 
     private void processFile(FileTypes fileType) throws IOException {
-        if(fileType == FileTypes.CSV) {
-            IFileReader reader = new CSVFileReader(0, inputFileInformation, slicerConfguration.getThreadReadBufferSize());
-            InputBufferReadStatus readStatus = reader.read(inputFileInformation, recordDescriptor);
-            if(readStatus != null) {
-                logger.info("{}", readStatus);
-            }
-        }
+        // if(fileType == FileTypes.CSV) {
+        //     IFileReader reader = new CSVFileReader(0, inputFileInformation, slicerConfguration.getThreadReadBufferSize());
+        //     //InputBufferReadStatus readStatus = reader.read(inputFileInformation, recordDescriptor);
+        //     if(readStatus != null) {
+        //         logger.info("{}", readStatus);
+        //     }
+        // }
     }
 
     private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException {
@@ -150,10 +149,10 @@ public class Reader {
 
         try { 
             inputBufferReaderService = Executors.newFixedThreadPool(numberOfBuffers);
-            
-            for(int iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
+            List<Callable<InputBufferReadStatus>> workers = null;
+                
+            for(var iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
                 thisBatchOffsetInFile = iteration * (long)bufferSize * numberOfBuffers;
-                List<Callable<InputBufferReadStatus>> workers = null;
                 if(iteration == 0) {
                     workers = prepareWorkers(fileType, thisBatchOffsetInFile, iteration);
                 } else {
@@ -161,6 +160,11 @@ public class Reader {
                 }
                 List<Future<InputBufferReadStatus>> iterationResults = inputBufferReaderService.invokeAll(workers);
                 //process the outcome of each iteration
+                // actions are -> 
+                // 1. process residual bytes in each buffer
+                // 2. Split valid Records from invalid records
+                // 3. Stream records to destination (as per configuration)
+                // 4. update update iteration statistics
                 iterationResults.stream().forEach(i -> {
                     try {
                         logger.info((i.get().toString()));
@@ -168,12 +172,18 @@ public class Reader {
                         Thread.currentThread().interrupt();
                     }
                 });
-               
+                
             }
         } finally {
             if(inputBufferReaderService != null)
                 shutdownAndAwaitTermination(inputBufferReaderService);
         }
+    }
+
+    private void processByteBufferResiduals(List<InputBufferReadStatus> iterationResults) {
+        var numberOfBuffers = iterationResults.size();
+        List<ByteArrayOutputStream> residualBytes = new ArrayList<>();
+       
     }
 
     private void shutdownAndAwaitTermination(ExecutorService pool) {
@@ -204,7 +214,7 @@ public class Reader {
         for(int workerId = 0; workerId < numberOfBuffers; workerId++) {
             if(fileType == FileTypes.CSV) {
                 IFileReader reader = new CSVFileReader(workerId, inputFileInformation, bufferSize);
-                Worker worker = new Worker(thisBatchOffsetInFile, iteration, reader, recordDescriptor);
+                Worker worker = new Worker(thisBatchOffsetInFile, iteration, reader, numberOfBuffers, recordDescriptor);
                 returnValue.add(worker);
             }
         }

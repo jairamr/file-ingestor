@@ -1,5 +1,9 @@
 package com.minimalism.common;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Currency;
+
 public class AllEnums {
     public enum FileTypes{
         BIN,
@@ -14,14 +18,60 @@ public class AllEnums {
     }
 
     public enum DataTypes {
-        BOOLEAN,
-        CURRENCY,
-        DATE,
-        EMAIL,
-        INTEGER,
-        DOUBLE,
-        STRING,
-        TIME
+        BOOLEAN(0),
+        CURRENCY(1),
+        DATE(2),
+        EMAIL(3),
+        FLOAT(4),
+        INTEGER(5),
+        LONG(6),
+        DOUBLE(7),
+        STRING(8),
+        TIME(9);
+        
+        private int dataType;
+        DataTypes(int dataType) {
+            this.dataType = dataType;
+        }
+        public String getTypeName() {
+            Class<?> type;
+            switch (this.dataType) {
+                case 0:
+                type = Boolean.class;
+                break;
+                case 1:
+                type = Currency.class;
+                break;
+                case 2:
+                type = LocalDate.class;
+                break;
+                case 3:
+                type = String.class;
+                break;
+                case 4:
+                type = Float.class;
+                break;
+                case 5:
+                type = Integer.class;
+                break;
+                case 6:
+                type = Long.class;
+                break;
+                case 7:
+                type = Double.class;
+                break;
+                case 8:
+                type = String.class;
+                break;
+                case 9:
+                type = LocalTime.class;
+                break;
+                default:
+                type = String.class;
+                break;
+            }
+            return type.getName();
+        }
     }
 
     public enum Directories {

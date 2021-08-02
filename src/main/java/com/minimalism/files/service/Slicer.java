@@ -33,12 +33,11 @@ public class Slicer {
     private SlicerConfigurationInformation prepareForSlicing() throws IOException {
         SlicerConfigurationInformation returnValue = null;
 
-        long availableMemory = SystemRecources.getInstance().getSysAvailablePhysicalMemory();
-        
-        if(this.inputFileInformation.getFileSize() >= availableMemory) {
-            returnValue = lessThanRequiredMemory();
-        } else {
-            returnValue = moreThanRequiredMemory();
+        var opMode = AppConfigHelper.getInstance().getServiceOperatingMode();
+        if(opMode.equalsIgnoreCase("balanced")) {
+            returnValue = balancedOperationalMode();
+        } else if(opMode.equalsIgnoreCase("single")) { 
+            returnValue = singleThreadedOperationMode();
         }
         return returnValue;
     }
@@ -48,35 +47,22 @@ public class Slicer {
      * @return SlicerConfigurationInformation
      * @throws IOException
      */
-    private SlicerConfigurationInformation lessThanRequiredMemory() throws IOException {
-        // typically 1MiB, but can be changed through a config setting
+    private SlicerConfigurationInformation singleThreadedOperationMode() throws IOException {
+        
         int bufferSize = AppConfigHelper.getInstance().getBufferSize();
-        // Get a view of available recources (CPU cores, memory and number of processes)
+        
         SystemRecources.getInstance().loadSystemState();
 
-        // We use the available physical memory to decide on the number of buffers to use
-        int numberOfBuffers = (int) SystemRecources.getInstance().getSysAvailablePhysicalMemory() / bufferSize;
-        if(numberOfBuffers == 0)
-            numberOfBuffers = 1;
+        var targetThreadCount = 0;
+        var iterations = 0;
         int availableCores = SystemRecources.getInstance().getJVMMaxProcessors();
-        // since the process is IO initiated and then compute bound (parsing and validation)
-        // a large amount of threads will cause thrashing, which will slow things down.
-        // We start with a configured loading factor(typically 3) 
-        int targetThreadCount = availableCores * AppConfigHelper.getInstance().getThreadsLoadingFactor();
-        // Ideally, we want one thread working on one buffer (no contention!)
-        if(numberOfBuffers > targetThreadCount)
-            numberOfBuffers = targetThreadCount;
-        else 
-            targetThreadCount = numberOfBuffers;
-
-        // if the file size islarger than the number of buffers, we must iterate
-        int iterationCount = (int) inputFileInformation.getFileSize() / (bufferSize * numberOfBuffers);
-        // nothing divides perfectly; we make the necessary adjustment to the iteration count
-        if(inputFileInformation.getFileSize()  % (bufferSize * numberOfBuffers) > 0)
-            iterationCount++;
         
+        targetThreadCount = 1;
+        iterations = (int) inputFileInformation.getFileSize() / bufferSize;
+        if(inputFileInformation.getFileSize() % bufferSize > 0) iterations++;
+    
         return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
-            this.inputFileInformation.getFileSize(), iterationCount, availableCores);
+            this.inputFileInformation.getFileSize(), iterations, availableCores);
     }
     
     
@@ -84,7 +70,7 @@ public class Slicer {
      * @return SlicerConfigurationInformation
      * @throws IOException
      */
-    private SlicerConfigurationInformation moreThanRequiredMemory() throws IOException {
+    private SlicerConfigurationInformation moreThanRequiredMemory(boolean singleThreaded) throws IOException {
         int bufferSize = AppConfigHelper.getInstance().getBufferSize();
 
         SystemRecources.getInstance().loadSystemState();
@@ -101,8 +87,18 @@ public class Slicer {
 
         return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
             this.inputFileInformation.getFileSize(), 1, availableCores);
-        
-        // return new SlicerConfigurationInformation(1, (int)this.inputFileInformation.getFileSize(), 
-        //     this.inputFileInformation.getFileSize(), 1, 1);
+    }
+
+    private SlicerConfigurationInformation balancedOperationalMode() throws IOException {
+        var bufferSize = AppConfigHelper.getInstance().getBufferSize();
+        var availableCores = SystemRecources.getInstance().getJVMMaxProcessors();
+        var targetThreadCount = availableCores * AppConfigHelper.getInstance().getThreadsLoadingFactor();
+        var bytesProcessedPerIteration = bufferSize * targetThreadCount;
+        var iterations = (int)inputFileInformation.getFileSize() / bytesProcessedPerIteration;
+        if(inputFileInformation.getFileSize() % bytesProcessedPerIteration > 0) {
+            iterations++;
+        }
+        return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
+        inputFileInformation.getFileSize(), iterations, availableCores);
     }
 }

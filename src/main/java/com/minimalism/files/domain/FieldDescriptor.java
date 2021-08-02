@@ -9,15 +9,15 @@ import com.minimalism.common.AllEnums.DataTypes;
 
 public class FieldDescriptor {
     private String fieldName;
-    private int position;
+    private short position;
     private DataTypes dataType;
-    private int minimumLength;
-    private int maximumLength;
+    private short minimumLength;
+    private short maximumLength;
     private boolean nullAllowed;
 
     public FieldDescriptor() {}
 
-    public FieldDescriptor(String fieldName, int position, String dataType, int minimumLength, int maximumLength, boolean nullAllowed) {
+    public FieldDescriptor(String fieldName, short position, String dataType, short minimumLength, short maximumLength, boolean nullAllowed) {
         this.fieldName = fieldName;
         this.position = position;
         this.dataType = Enum.valueOf(DataTypes.class, dataType);
@@ -26,7 +26,7 @@ public class FieldDescriptor {
         this.nullAllowed = nullAllowed;
     }
 
-    public FieldDescriptor(String fieldName, int position, DataTypes dataType, int minimumLength, int maximumLength, boolean nullAllowed) {
+    public FieldDescriptor(String fieldName, short position, DataTypes dataType, short minimumLength, short maximumLength, boolean nullAllowed) {
         this.fieldName = fieldName;
         this.position = position;
         this.dataType = dataType;
@@ -35,7 +35,7 @@ public class FieldDescriptor {
         this.nullAllowed = nullAllowed;
     }
     
-    public FieldDescriptor(String fieldName, int position, DataTypes dataType, int minimumLength, int maximumLength) {
+    public FieldDescriptor(String fieldName, short position, DataTypes dataType, short minimumLength, short maximumLength) {
         this(fieldName, position, dataType, minimumLength, maximumLength, false);
     }
 
@@ -57,14 +57,14 @@ public class FieldDescriptor {
     /** 
      * @return int
      */
-    public int getPosition() {
+    public short getPosition() {
         return position;
     }
     
     /** 
      * @param position
      */
-    public void setPosition(int position) {
+    public void setPosition(short position) {
         this.position = position;
     }
     
@@ -85,28 +85,28 @@ public class FieldDescriptor {
     /** 
      * @return int
      */
-    public int getMinimumLength() {
+    public short getMinimumLength() {
         return minimumLength;
     }
     
     /** 
      * @param minimumLength
      */
-    public void setMinimumLength(int minimumLength) {
+    public void setMinimumLength(short minimumLength) {
         this.minimumLength = minimumLength;
     }
     
     /** 
      * @return int
      */
-    public int getMaximumLength() {
+    public short getMaximumLength() {
         return maximumLength;
     }
     
     /** 
      * @param maximumLength
      */
-    public void setMaximumLength(int maximumLength) {
+    public void setMaximumLength(short maximumLength) {
         this.maximumLength = maximumLength;
     }
     

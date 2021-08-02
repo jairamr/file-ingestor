@@ -1,7 +1,6 @@
 package com.minimalism.files.service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -18,15 +17,14 @@ import com.minimalism.files.domain.RecordDescriptor;
 import com.minimalism.files.exceptions.NoSuchPathException;
 
 public class RecordDescriptorReader {
-    private RecordDescriptor recordDescriptor;
 
-    
     /** 
      * @param clientName
      * @param fileName
      * @return RecordDescriptor
      */
-    public RecordDescriptor readDefinition(String clientName, String fileName) {
+    public static RecordDescriptor readDefinition(String clientName, String fileName) {
+        RecordDescriptor recordDescriptor = null;
         String descriptorFileName = null;
         try {
             Path inputRecordDescriptionPath = FileSystemConfigHelper.getInstance().getServiceInputDataDefinitionDirectory(clientName);
@@ -38,7 +36,7 @@ public class RecordDescriptorReader {
                 descriptorFileName = fileName.substring(indexOfFirstUnderscrore + 1, indexOfSecondUnderscrore);
             }
             if(Files.exists(inputRecordDescriptionPath.resolve(descriptorFileName.concat(".json")))) {
-                parseJsonDescriptorFile(inputRecordDescriptionPath.resolve(descriptorFileName.concat(".json")));
+                recordDescriptor = parseJsonDescriptorFile(inputRecordDescriptionPath.resolve(descriptorFileName.concat(".json")));
             } else if(Files.exists(inputRecordDescriptionPath.resolve(descriptorFileName.concat("yml")))) {
                 parseYamlDescriptorFile(inputRecordDescriptionPath.resolve(descriptorFileName.concat("yml")));
             } else {
@@ -48,7 +46,7 @@ public class RecordDescriptorReader {
         } catch (NoSuchPathException | IOException e) {
             e.printStackTrace();
         }
-        return this.recordDescriptor;
+        return recordDescriptor;
     }
 
     
@@ -56,20 +54,18 @@ public class RecordDescriptorReader {
      * @param descriptorFile
      * @throws IOException
      */
-    private void parseJsonDescriptorFile(Path descriptorFile) throws IOException {
-        try(InputStream input = Files.newInputStream(descriptorFile, StandardOpenOption.READ)) {
-            JsonParser parser = Json.createParser(input);
-            
-            while(parser.hasNext()) {
-                Event jsonEvent = parser.next();
-                switch(jsonEvent) {
-                    case START_OBJECT:
-                    processRecordDefinition(parser);
-                    break;
-                    default:
-                    break;
+    private static RecordDescriptor parseJsonDescriptorFile(Path descriptorFile) throws IOException {
+        RecordDescriptor recordDescriptor = null;
+        try(var input = Files.newInputStream(descriptorFile, StandardOpenOption.READ)) {
+            try(JsonParser parser = Json.createParser(input)) {
+                while(parser.hasNext()) {
+                    Event jsonEvent = parser.next();
+                    if(jsonEvent == Event.START_OBJECT) {
+                        recordDescriptor = processRecordDefinition(parser);
+                    }
                 }
-            } 
+            }
+            return recordDescriptor;
         }
     }
 
@@ -77,7 +73,7 @@ public class RecordDescriptorReader {
     /** 
      * @param descriptorFile
      */
-    private void parseYamlDescriptorFile(Path descriptorFile) {
+    private static void parseYamlDescriptorFile(Path descriptorFile) {
         
     }
 
@@ -85,22 +81,22 @@ public class RecordDescriptorReader {
     /** 
      * @param parser
      */
-    private void processRecordDefinition(JsonParser parser) {
-        this.recordDescriptor = new RecordDescriptor();
+    private static RecordDescriptor processRecordDefinition(JsonParser parser) {
+        RecordDescriptor recordDescriptor = new RecordDescriptor();
         while(parser.hasNext()) {
-            Event event = parser.next();
+            var event = parser.next();
             switch(event) {
                 case KEY_NAME:
-                String key = parser.getString();
+                var key = parser.getString();
                 switch(key) {
                     case "record-type":
                     parser.next();
-                    this.recordDescriptor.setRecordType(parser.getString());
+                    recordDescriptor.setRecordType(parser.getString());
                     break;
                     case "record-separator":
                     parser.next();
-                    String recordSeparator = parser.getString();
-                    byte[] recordSeparators = new byte[2];
+                    var recordSeparator = parser.getString();
+                    var recordSeparators = new byte[2];
                     if(recordSeparator.equalsIgnoreCase("CRLF")) {
                         recordSeparators[0] = '\r';
                         recordSeparators[1] = '\n';
@@ -114,34 +110,38 @@ public class RecordDescriptorReader {
                             recordSeparators[i] = inputBytes[i];
                         }
                     }
-                    this.recordDescriptor.setRecordSeparator(recordSeparators);
+                    recordDescriptor.setRecordSeparator(recordSeparators);
+                    break;
+                    case "entity-classname":
+                    parser.next();
+                    recordDescriptor.setEntityClassName(parser.getString());
                     break;
                     case "field-separator":
                     parser.next();
-                    this.recordDescriptor.setFieldSeperator((byte)parser.getString().charAt(0));
+                    recordDescriptor.setFieldSeperator((byte)parser.getString().charAt(0));
                     break;
                     default:
                     break;
                 }
                 break;
                 case START_ARRAY:
-                processFieldDefinition(parser);
+                processFieldDefinition(parser, recordDescriptor);
                 break;
                 default:
                 break;
             }
         }
-        
+        return recordDescriptor;
     }
 
     
     /** 
      * @param parser
      */
-    private void processFieldDefinition(JsonParser parser) {
+    private static void processFieldDefinition(JsonParser parser, RecordDescriptor recordDescriptor) {
         FieldDescriptor fd = null;
         while(parser.hasNext()) {
-            Event event = parser.next();
+            var event = parser.next();
             switch(event){
                 case START_OBJECT:
                 fd = new FieldDescriptor();
@@ -155,7 +155,7 @@ public class RecordDescriptorReader {
                     break;
                     case "position":
                     parser.next();
-                    fd.setPosition(parser.getInt());
+                    fd.setPosition((short)parser.getInt());
                     break;
                     case "data-type":
                     parser.next();
@@ -163,20 +163,22 @@ public class RecordDescriptorReader {
                     break;
                     case "minimum-length":
                     parser.next();
-                    fd.setMinimumLength(parser.getInt());
+                    fd.setMinimumLength((short)parser.getInt());
                     break;
                     case "maximum-length":
                     parser.next();
-                    fd.setMaximumLength(parser.getInt());
+                    fd.setMaximumLength((short)parser.getInt());
                     break;
                     case "null-allowed":
                     parser.next();
-                    fd.setNullAllowed((parser.getValue() == JsonValue.FALSE) ? false : true);
+                    fd.setNullAllowed((parser.getValue() == JsonValue.FALSE));
+                    break;
+                    default:
                     break;
                 }
                 break;
                 case END_OBJECT:
-                this.recordDescriptor.addFieldDescriptor(fd);
+                recordDescriptor.addFieldDescriptor(fd);
                 break;
                 default:
                 break;

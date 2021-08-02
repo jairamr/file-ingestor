@@ -1,6 +1,12 @@
-package com.minimalism.files.domain.records;
+package com.minimalism.files.domain.entities;
 
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.Objects;
+
+import javax.json.Json;
+import javax.json.JsonObjectBuilder;
 
 public class Employee {
     private String empID;
@@ -41,8 +47,8 @@ public class Employee {
     private String userName;
     private String password;
 
-    public void makeFromFile(String commaSeparated) {
-        String[] fields = commaSeparated.split(",");
+    public void makeFromFile(String fieldSeparator, String commaSeparated) {
+        String[] fields = commaSeparated.split(fieldSeparator);
         this.setEmpID(fields[0]);
         this.setNamePrefix(fields[1]);
         this.setFirstName(fields[2]);
@@ -82,8 +88,8 @@ public class Employee {
         this.setPassword(fields[36]);
     }
 
-    public Employee(String fromFile) {
-        this.makeFromFile(fromFile);
+    public Employee(String fieldSeparator, String fromFile) {
+        this.makeFromFile(fieldSeparator, fromFile);
     }
 
     public String getEmpID() {
@@ -347,5 +353,54 @@ public class Employee {
         else {
             return  this.hashCode() == other.hashCode();
         }
+    }
+    @Override
+    public String toString() {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        
+        Field[] fields = this.getClass().getDeclaredFields();
+        try{
+            for(Field f : fields) {
+                var name = f.getName();
+                var type = f.getType();
+                switch (type.getSimpleName()) {
+                    case "Character":
+                    builder.add(name, f.getChar(this));
+                    break;
+                    case "Boolean":
+                    builder.add(name, f.getBoolean(this));
+                    break;
+                    case "Byte":
+                    builder.add(name, f.getByte(this));
+                    break;
+                    case "Date":
+                    builder.add(name, ((Date)f.get(this)).toString());
+                    break;
+                    case "Double":
+                    builder.add(name, f.getDouble(this));
+                    break;
+                    case "Float":
+                    builder.add(name, f.getFloat(this));
+                    break;
+                    case "LocalDate":
+                    builder.add(name, ((LocalDate)f.get(this)).toString());
+                    break;
+                    case "Short":
+                    break;
+                    case "Integer":
+                    builder.add(name, f.getInt(this));
+                    break;
+                    case "Long":
+                    builder.add(name, f.getLong(this));
+                    break;
+                    default:
+                    builder.add(name, f.get(this).toString());
+                    break;
+                }
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return builder.build().toString(); 
     }
 }

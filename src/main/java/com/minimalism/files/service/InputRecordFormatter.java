@@ -1,16 +1,16 @@
 package com.minimalism.files.service;
 
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.minimalism.files.domain.FieldDescriptor;
 import com.minimalism.files.domain.RecordDescriptor;
-import com.minimalism.files.domain.records.Employee;
+import com.minimalism.files.domain.entities.Employee;
+import com.minimalism.files.domain.entities.Entity;
+import com.minimalism.files.service.input.EntityBuilder;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -20,31 +20,37 @@ import org.slf4j.LoggerFactory;
 
 public class InputRecordFormatter {
     private static Logger logger = LoggerFactory.getLogger(InputRecordFormatter.class);
-    
+    private RecordDescriptor recordDescriptor;
+
+    public InputRecordFormatter(RecordDescriptor recordDescriptor) {
+        this.recordDescriptor = recordDescriptor;
+    }
     /** 
      * @param inputFileRecords
      * @param recordDescriptor
      * @return Map<Integer, List<String>>
      */
-    public List<Employee> format(Map<Integer, ByteBuffer> inputFileRecords, RecordDescriptor recordDescriptor) {
+    public List<Entity> format(Map<Integer, ByteBuffer> inputFileRecords, RecordDescriptor recordDescriptor) {
         long startTime = System.currentTimeMillis();
-        List<Employee> records = new ArrayList<>();
-        byte fieldSeparator = recordDescriptor.getFieldSeperator();
+        List<Entity> records = new ArrayList<>();
+        //byte fieldSeparator = recordDescriptor.getFieldSeperator();
 
         var recordNumber = 0;
 
         for (var i = 0; i < inputFileRecords.size(); i++) {
-            var fieldStartIndex = 0;
-            var fieldEndIndex = 0;
-            var fieldPosition = 0;
+            // var fieldStartIndex = 0;
+            // var fieldEndIndex = 0;
+            // var fieldPosition = 0;
 
-            ArrayList<String> fieldsInRecord = new ArrayList<>(recordDescriptor.getFieldDescriptors().size());
+            // ArrayList<String> fieldsInRecord = new ArrayList<>(recordDescriptor.getFieldDescriptors().size());
             
             ByteBuffer inputRecord = inputFileRecords.get(i);
             try{
-                records.add(recordNumber++, new Employee(new String(inputRecord.array())));
+                records.add(recordNumber++, 
+                EntityBuilder.build(new String(inputRecord.array()), recordDescriptor));
+                //records.add(recordNumber++, new Employee(recordDescriptor.getFieldSeparatorAsString(), new String(inputRecord.array())));
             } catch (Exception e) {
-                logger.error("Exception while adding employee record: message: {}, stack:{}", e.getMessage(), e.getStackTrace());
+                logger.error("Exception while adding record Entity: message: {}, stack:{}", e.getMessage(), e.getStackTrace());
             }
 
         //     while(inputRecord.hasRemaining()) {
@@ -81,7 +87,7 @@ public class InputRecordFormatter {
 
     private GenericRecord buildDomainObject(RecordDescriptor recordDescriptor, List<String> fieldValues) {
         long startTime = System.currentTimeMillis();
-        Set<FieldDescriptor> fieldDescriptors = recordDescriptor.getFieldDescriptors();
+        List<FieldDescriptor> fieldDescriptors = recordDescriptor.getFieldDescriptors();
         var schema = new Schema.Parser().parse(OutputRecordSchemaGenerator.createAvroSchema("Client_1", recordDescriptor, "HrData").toString()); 
         
         GenericRecord inputRecord = new GenericData.Record(schema);
