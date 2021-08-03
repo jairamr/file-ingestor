@@ -1,4 +1,4 @@
-package com.minimalism.files.service;
+package com.minimalism.files.service.input;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +48,7 @@ public class Reader {
     SlicerConfigurationInformation slicerConfguration;
     RecordDescriptor recordDescriptor;
     String operatingMode;
+    private byte[] leftOversFromPreviousIteration;
 
     public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException {
         
@@ -130,6 +131,11 @@ public class Reader {
         return numberofRecordsProcessed;
     }
 
+    
+    /** 
+     * @param fileType
+     * @throws IOException
+     */
     private void processFile(FileTypes fileType) throws IOException {
         // if(fileType == FileTypes.CSV) {
         //     IFileReader reader = new CSVFileReader(0, inputFileInformation, slicerConfguration.getThreadReadBufferSize());
@@ -140,6 +146,12 @@ public class Reader {
         // }
     }
 
+    
+    /** 
+     * @param fileType
+     * @throws IOException
+     * @throws InterruptedException
+     */
     private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
@@ -165,14 +177,16 @@ public class Reader {
                 // 2. Split valid Records from invalid records
                 // 3. Stream records to destination (as per configuration)
                 // 4. update update iteration statistics
+                List<InputBufferReadStatus> resultsFromWorkers = new ArrayList<>();
                 iterationResults.stream().forEach(i -> {
                     try {
                         logger.info((i.get().toString()));
+                        resultsFromWorkers.add(i.get());
                     } catch (InterruptedException | ExecutionException e) {
                         Thread.currentThread().interrupt();
                     }
                 });
-                
+                processByteBufferResiduals(resultsFromWorkers);
             }
         } finally {
             if(inputBufferReaderService != null)
@@ -180,12 +194,58 @@ public class Reader {
         }
     }
 
-    private void processByteBufferResiduals(List<InputBufferReadStatus> iterationResults) {
+    
+    /** 
+     * @param iterationResults
+     * @throws IOException
+     */
+    private void processByteBufferResiduals(List<InputBufferReadStatus> iterationResults) throws IOException {
         var numberOfBuffers = iterationResults.size();
         List<ByteArrayOutputStream> residualBytes = new ArrayList<>();
-       
+        // handle leftovers
+        if(this.leftOversFromPreviousIteration != null) {
+            var leftOvers = new ByteArrayOutputStream();
+            leftOvers.write(this.leftOversFromPreviousIteration);
+            if(iterationResults.get(0).getUnprocessedPreamble() != null) {
+                leftOvers.write(iterationResults.get(0).getUnprocessedPreamble());
+            }
+            if(leftOvers.size() > 0) {
+                residualBytes.add(leftOvers);
+            }
+        }
+        for(var i = 1; i < numberOfBuffers; i++) {
+            ByteArrayOutputStream postPreConcats = new ByteArrayOutputStream();
+            var prevBufferPostamble = iterationResults.get(i - 1).getUnprocessedPostamble();
+            if(prevBufferPostamble != null) {
+                postPreConcats.write(prevBufferPostamble);
+            }
+            var currBufferPreamble = iterationResults.get(i).getUnprocessedPreamble();
+            if(currBufferPreamble != null) {
+                postPreConcats.write(currBufferPreamble);
+            }
+            if(postPreConcats.size() > 0) {
+                residualBytes.add(postPreConcats);
+            }
+        }
+        // save the postamble bytes to be processed in the next iteration
+        var lastPostAmble = iterationResults.get(iterationResults.size() - 1).getUnprocessedPostamble();
+        if(lastPostAmble != null) {
+            this.leftOversFromPreviousIteration = new byte[lastPostAmble.length];
+            this.leftOversFromPreviousIteration = lastPostAmble;
+        } else {
+            this.leftOversFromPreviousIteration = null;
+        }
+        var i = 0;
+        for(ByteArrayOutputStream b : residualBytes) {
+            logger.info("Residual record from buffer: {} --- {}", i, new String(b.toByteArray()));
+            i++;
+        }
     }
 
+    
+    /** 
+     * @param pool
+     */
     private void shutdownAndAwaitTermination(ExecutorService pool) {
         pool.shutdown(); // Disable new tasks from being submitted
         try {
@@ -204,6 +264,13 @@ public class Reader {
         }
       }
 
+    
+    /** 
+     * @param fileType
+     * @param thisBatchOffsetInFile
+     * @param iteration
+     * @return List<Callable<InputBufferReadStatus>>
+     */
     private List<Callable<InputBufferReadStatus>> prepareWorkers(FileTypes fileType, 
                                                     long thisBatchOffsetInFile, int iteration) {
         List<Callable<InputBufferReadStatus>> returnValue = new ArrayList<>();
@@ -221,6 +288,12 @@ public class Reader {
         return returnValue;
     }
 
+    
+    /** 
+     * @param workers
+     * @param offsetInFile
+     * @param iteration
+     */
     private void resetWorkers(List<Callable<InputBufferReadStatus>> workers, long offsetInFile, int iteration) {
         workers.stream().forEach(w -> ((Worker)w).reset(offsetInFile, iteration));
     }

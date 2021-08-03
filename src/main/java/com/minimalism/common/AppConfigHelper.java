@@ -59,6 +59,10 @@ public class AppConfigHelper {
         return Paths.get(serviceProperties.getProperty(SERVICE_ROOT_DIRECTORY));
     }
 
+    
+    /** 
+     * @return String
+     */
     public String getServiceOperatingMode() {
         return serviceProperties.getProperty(SERVICE_OPERATING_MODE);
     }

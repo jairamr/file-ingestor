@@ -1,4 +1,4 @@
-package com.minimalism.files.service;
+package com.minimalism.files.service.output.avro;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;

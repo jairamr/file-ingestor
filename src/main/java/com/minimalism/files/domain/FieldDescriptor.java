@@ -134,6 +134,10 @@ public class FieldDescriptor {
                                 this.minimumLength, this.maximumLength, this.nullAllowed);
     }
 
+    
+    /** 
+     * @return String
+     */
     public String getFieldNameForAvro() {
         return this.fieldName.replaceAll("[ -]", "_");
     }

@@ -5,7 +5,7 @@ import java.io.IOException;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
-import com.minimalism.files.service.Reader;
+import com.minimalism.files.service.input.Reader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

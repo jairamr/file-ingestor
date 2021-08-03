@@ -1,4 +1,4 @@
-package com.minimalism.files.service;
+package com.minimalism.files.service.input;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -34,6 +34,14 @@ public class CSVFileReader implements IFileReader{
         this.recordsFromFile = new HashMap<>();
     }
 
+    
+    /** 
+     * @param thisBatchOffsetInFile
+     * @param iteration
+     * @param numberOfThreads
+     * @param recordDescriptor
+     * @return InputBufferReadStatus
+     */
     public InputBufferReadStatus read(long thisBatchOffsetInFile, int iteration, int numberOfThreads, RecordDescriptor recordDescriptor) {
         
         InputBufferReadStatus returnValue = null;
@@ -57,6 +65,13 @@ public class CSVFileReader implements IFileReader{
         return returnValue;
     }
 
+    
+    /** 
+     * @param thisBatchOffsetInFile
+     * @param iteration
+     * @param numberOfThreads
+     * @return InputBufferReadStatus
+     */
     private InputBufferReadStatus processTwoCharRecordSeparator(long thisBatchOffsetInFile, int iteration, int numberOfThreads) {
 
         var currentThread = Thread.currentThread();
@@ -81,6 +96,11 @@ public class CSVFileReader implements IFileReader{
         return readStatus;
     }
 
+    
+    /** 
+     * @param thisBatchOffsetInFile
+     * @param readStatus
+     */
     private void processByteBuffer(long thisBatchOffsetInFile, InputBufferReadStatus readStatus) {
 
         long thisBuffersOffsetInFile = thisBatchOffsetInFile + this.id * this.bufferSize;
@@ -142,6 +162,10 @@ public class CSVFileReader implements IFileReader{
         readStatus.setBytesRead(bytesRead);
     }
     
+    
+    /** 
+     * @return int
+     */
     private int handleHeaders() {
         var startFrom = 0;
         if(inputFileInformation.isHeaderPresent()) {
@@ -159,6 +183,11 @@ public class CSVFileReader implements IFileReader{
         return startFrom; 
     }
 
+    
+    /** 
+     * @param readStatus
+     * @return int
+     */
     private int handlePreamble(InputBufferReadStatus readStatus) {
         // we treat all first records as incomplete since slicing can cause breaks at any point.
         var recordStart = 0;

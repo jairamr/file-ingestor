@@ -62,6 +62,10 @@ public class RecordDescriptor {
     public byte getFieldSeperator() {
         return fieldSeperator;
     }
+    
+    /** 
+     * @return String
+     */
     public String getFieldSeparatorAsString() {
         var fsAsArray = new byte[1];
         fsAsArray[0] = this.fieldSeperator;
@@ -105,15 +109,31 @@ public class RecordDescriptor {
             return;
         this.fieldDescriptors.add(descriptor);
     }
+    
+    /** 
+     * @return int
+     */
     public int maxRecordSize() {
         return this.fieldDescriptors.stream().mapToInt(FieldDescriptor::getMaximumLength).sum();
     }
+    
+    /** 
+     * @return int
+     */
     public int getMinRecordSize() {
         return this.fieldDescriptors.stream().mapToInt(FieldDescriptor::getMinimumLength).sum();
     }
+    
+    /** 
+     * @return String
+     */
     public String getEntityClassName() {
         return entityClassName;
     }
+    
+    /** 
+     * @param className
+     */
     public void setEntityClassName(String className) {
         this.entityClassName = className;
     }

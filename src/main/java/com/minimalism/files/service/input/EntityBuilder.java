@@ -1,7 +1,6 @@
 package com.minimalism.files.service.input;
 
 import java.util.List;
-import java.util.Set;
 import com.minimalism.files.domain.FieldDescriptor;
 import com.minimalism.files.domain.RecordDescriptor;
 import com.minimalism.files.domain.entities.Entity;
@@ -11,6 +10,12 @@ public class EntityBuilder {
 
     private EntityBuilder() {}
 
+    
+    /** 
+     * @param inputRecord
+     * @param recordDescriptor
+     * @return Entity
+     */
     public static Entity build(String inputRecord, RecordDescriptor recordDescriptor) {
         Entity domainEntity = new Entity("Client_1", recordDescriptor.getEntityClassName(), recordDescriptor.getFieldDescriptors().size());
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
@@ -26,6 +31,11 @@ public class EntityBuilder {
         return domainEntity;
     }
 
+    
+    /** 
+     * @param fieldDescriptor
+     * @return Field
+     */
     private static Field buildField(FieldDescriptor fieldDescriptor) {
         var field = new Field();
         field.setName(fieldDescriptor.getFieldName());

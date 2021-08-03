@@ -1,4 +1,4 @@
-package com.minimalism.files.service;
+package com.minimalism.files.service.input;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,6 +18,7 @@ import com.minimalism.files.exceptions.NoSuchPathException;
 
 public class RecordDescriptorReader {
 
+    private RecordDescriptorReader() {}
     /** 
      * @param clientName
      * @param fileName
@@ -27,7 +28,7 @@ public class RecordDescriptorReader {
         RecordDescriptor recordDescriptor = null;
         String descriptorFileName = null;
         try {
-            Path inputRecordDescriptionPath = FileSystemConfigHelper.getInstance().getServiceInputDataDefinitionDirectory(clientName);
+            var inputRecordDescriptionPath = FileSystemConfigHelper.getInstance().getServiceInputDataDefinitionDirectory(clientName);
             if(fileName.startsWith("_")) {
                 descriptorFileName = fileName.substring(1, fileName.indexOf("_", 1));
             } else {

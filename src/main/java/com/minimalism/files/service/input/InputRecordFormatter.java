@@ -1,16 +1,14 @@
-package com.minimalism.files.service;
+package com.minimalism.files.service.input;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.minimalism.files.domain.FieldDescriptor;
 import com.minimalism.files.domain.RecordDescriptor;
-import com.minimalism.files.domain.entities.Employee;
 import com.minimalism.files.domain.entities.Entity;
-import com.minimalism.files.service.input.EntityBuilder;
+import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -85,6 +83,12 @@ public class InputRecordFormatter {
         return records;
     }
 
+    
+    /** 
+     * @param recordDescriptor
+     * @param fieldValues
+     * @return GenericRecord
+     */
     private GenericRecord buildDomainObject(RecordDescriptor recordDescriptor, List<String> fieldValues) {
         long startTime = System.currentTimeMillis();
         List<FieldDescriptor> fieldDescriptors = recordDescriptor.getFieldDescriptors();

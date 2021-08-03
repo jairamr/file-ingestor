@@ -1,4 +1,4 @@
-package com.minimalism.files.service;
+package com.minimalism.files.service.input;
 
 import java.io.IOException;
 
@@ -89,6 +89,11 @@ public class Slicer {
             this.inputFileInformation.getFileSize(), 1, availableCores);
     }
 
+    
+    /** 
+     * @return SlicerConfigurationInformation
+     * @throws IOException
+     */
     private SlicerConfigurationInformation balancedOperationalMode() throws IOException {
         var bufferSize = AppConfigHelper.getInstance().getBufferSize();
         var availableCores = SystemRecources.getInstance().getJVMMaxProcessors();

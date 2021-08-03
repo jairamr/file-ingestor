@@ -1,7 +1,7 @@
 package com.minimalism.files;
 
 import com.minimalism.files.domain.InputFileInformation;
-import com.minimalism.files.service.Slicer;
+import com.minimalism.files.service.input.Slicer;
 
 import org.junit.jupiter.api.Test;
 
