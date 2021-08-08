@@ -2,7 +2,7 @@ package com.minimalism.files.service.input;
 
 import java.io.IOException;
 
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
 
 public interface IFileReader {
     InputBufferReadStatus read(long thisBatchOffsetInFile, int iteration, int numberOfThreads, RecordDescriptor recordDescriptor) throws IOException; 

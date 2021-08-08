@@ -1,4 +1,4 @@
-package com.minimalism.files.domain;
+package com.minimalism.files.domain.input;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +15,7 @@ public class RecordDescriptor {
     private byte[] recordSeparator;
     private List<FieldDescriptor> fieldDescriptors;
     private String entityClassName;
+    private String targetDomainClassName;
 
     public RecordDescriptor() {
         this(RecordTypes.DELIMITED, (byte)',', Pair.of(CR, LF).toString().getBytes());
@@ -136,6 +137,19 @@ public class RecordDescriptor {
      */
     public void setEntityClassName(String className) {
         this.entityClassName = className;
+    }
+    /** 
+     * @return String
+     */
+    public String getTargetDomainClassName() {
+        return targetDomainClassName;
+    }
+    
+    /** 
+     * @param className
+     */
+    public void setTargetDomainClassName(String className) {
+        this.targetDomainClassName = className;
     }
 
 }

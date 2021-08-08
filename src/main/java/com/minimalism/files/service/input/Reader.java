@@ -19,9 +19,10 @@ import java.util.concurrent.TimeUnit;
 import com.minimalism.common.AppConfigHelper;
 import com.minimalism.common.AllEnums.FileTypes;
 import com.minimalism.files.FileSystemConfigHelper;
-import com.minimalism.files.domain.InputFileInformation;
-import com.minimalism.files.domain.RecordDescriptor;
-import com.minimalism.files.domain.SlicerConfigurationInformation;
+import com.minimalism.files.domain.entities.ResidualBufferBytesHandler;
+import com.minimalism.files.domain.input.InputFileInformation;
+import com.minimalism.files.domain.input.RecordDescriptor;
+import com.minimalism.files.domain.input.SlicerConfigurationInformation;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
@@ -49,6 +50,7 @@ public class Reader {
     RecordDescriptor recordDescriptor;
     String operatingMode;
     private byte[] leftOversFromPreviousIteration;
+    ResidualBufferBytesHandler residualsHandler;
 
     public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException {
         
@@ -88,6 +90,8 @@ public class Reader {
         this.slicerConfguration = slicer.sliceFile();
 
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
+        this.residualsHandler = new ResidualBufferBytesHandler(this.recordDescriptor.getRecordSeparator(), inputFileInformation.getFileType());
+        
     }
 
     public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException {
@@ -186,63 +190,19 @@ public class Reader {
                         Thread.currentThread().interrupt();
                     }
                 });
-                processByteBufferResiduals(resultsFromWorkers);
+                this.leftOversFromPreviousIteration = this.residualsHandler.processResiduals(resultsFromWorkers, leftOversFromPreviousIteration);
+                List<ByteArrayOutputStream> residualRecords = this.residualsHandler.getResidualRecords();
+                // var i = 0;
+                // for(ByteArrayOutputStream b : residualRecords) {
+                //     logger.info("Residual record from buffer: {} --- {}", i, new String(b.toByteArray()));
+                //     i++;
+                // }
             }
         } finally {
             if(inputBufferReaderService != null)
                 shutdownAndAwaitTermination(inputBufferReaderService);
         }
     }
-
-    
-    /** 
-     * @param iterationResults
-     * @throws IOException
-     */
-    private void processByteBufferResiduals(List<InputBufferReadStatus> iterationResults) throws IOException {
-        var numberOfBuffers = iterationResults.size();
-        List<ByteArrayOutputStream> residualBytes = new ArrayList<>();
-        // handle leftovers
-        if(this.leftOversFromPreviousIteration != null) {
-            var leftOvers = new ByteArrayOutputStream();
-            leftOvers.write(this.leftOversFromPreviousIteration);
-            if(iterationResults.get(0).getUnprocessedPreamble() != null) {
-                leftOvers.write(iterationResults.get(0).getUnprocessedPreamble());
-            }
-            if(leftOvers.size() > 0) {
-                residualBytes.add(leftOvers);
-            }
-        }
-        for(var i = 1; i < numberOfBuffers; i++) {
-            ByteArrayOutputStream postPreConcats = new ByteArrayOutputStream();
-            var prevBufferPostamble = iterationResults.get(i - 1).getUnprocessedPostamble();
-            if(prevBufferPostamble != null) {
-                postPreConcats.write(prevBufferPostamble);
-            }
-            var currBufferPreamble = iterationResults.get(i).getUnprocessedPreamble();
-            if(currBufferPreamble != null) {
-                postPreConcats.write(currBufferPreamble);
-            }
-            if(postPreConcats.size() > 0) {
-                residualBytes.add(postPreConcats);
-            }
-        }
-        // save the postamble bytes to be processed in the next iteration
-        var lastPostAmble = iterationResults.get(iterationResults.size() - 1).getUnprocessedPostamble();
-        if(lastPostAmble != null) {
-            this.leftOversFromPreviousIteration = new byte[lastPostAmble.length];
-            this.leftOversFromPreviousIteration = lastPostAmble;
-        } else {
-            this.leftOversFromPreviousIteration = null;
-        }
-        var i = 0;
-        for(ByteArrayOutputStream b : residualBytes) {
-            logger.info("Residual record from buffer: {} --- {}", i, new String(b.toByteArray()));
-            i++;
-        }
-    }
-
-    
     /** 
      * @param pool
      */

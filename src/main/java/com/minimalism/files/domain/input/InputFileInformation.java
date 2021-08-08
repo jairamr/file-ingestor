@@ -1,4 +1,4 @@
-package com.minimalism.files.domain;
+package com.minimalism.files.domain.input;
 
 import java.io.IOException;
 import java.nio.file.Files;

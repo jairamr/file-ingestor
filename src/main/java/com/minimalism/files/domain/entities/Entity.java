@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+
 /**
  * @author R Jairam Iyer
  * The <em>Entity</em> class represents a domain entity. It is a generic representation of the instances
@@ -107,6 +111,20 @@ public class Entity implements IValidation {
     public Field getField(String fieldName) {
         return this.fields.stream().filter(f -> f.getName().equals(fieldName)).findFirst().orElse(null);
     }
+
+    public JsonObject forAvroSchema() {
+        JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder();
+        for(Field f : this.fields) {
+            fieldsBuilder.add(f.forAvroSchema());
+        }
+        return Json.createObjectBuilder()
+        .add("namespace", "com.minimalism.files.domain.entoties")
+        .add("name", this.getClass().getSimpleName())
+        .add("type", "record")
+        .add("fields", fieldsBuilder)
+        .build();
+    }
+
     
     /** 
      * 

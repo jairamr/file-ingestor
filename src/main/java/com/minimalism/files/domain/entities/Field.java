@@ -3,6 +3,10 @@ package com.minimalism.files.domain.entities;
 import java.util.BitSet;
 import java.util.Objects;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+
 public class Field {
     private static short TYPE_BIT = 3;
     private static short MIN_LENGTH_BIT = 2;
@@ -120,6 +124,18 @@ public class Field {
         flags.set(NULL_VALUE_BIT, !this.nullable ? (value != null) : value == null);
 
         this.value = value;
+    }
+    public JsonObject forAvroSchema() {
+        JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder()
+        .add(Json.createObjectBuilder()
+            .add("name", this.getName())
+            .add("type", this.getTypeName().toLowerCase()));
+
+        return Json.createObjectBuilder()
+        .add("type", "record")
+        .add("name", this.getClass().getSimpleName())
+        .add("fields", fieldsBuilder)
+        .build();
     }
     
     /** 

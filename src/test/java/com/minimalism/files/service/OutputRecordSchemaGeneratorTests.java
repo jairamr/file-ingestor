@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import javax.json.JsonObject;
 
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.service.input.RecordDescriptorReader;
 import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
 

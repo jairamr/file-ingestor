@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.minimalism.common.AllEnums.DataTypes;
 import com.minimalism.common.AllEnums.RecordTypes;
-import com.minimalism.files.domain.FieldDescriptor;
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.input.FieldDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.service.input.RecordDescriptorReader;
 
 import org.junit.jupiter.api.BeforeAll;

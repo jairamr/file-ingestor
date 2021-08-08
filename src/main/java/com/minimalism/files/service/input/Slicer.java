@@ -3,9 +3,9 @@ package com.minimalism.files.service.input;
 import java.io.IOException;
 
 import com.minimalism.common.AppConfigHelper;
-import com.minimalism.files.domain.InputFileInformation;
-import com.minimalism.files.domain.SlicerConfigurationInformation;
 import com.minimalism.files.domain.SystemRecources;
+import com.minimalism.files.domain.input.InputFileInformation;
+import com.minimalism.files.domain.input.SlicerConfigurationInformation;
 
 public class Slicer {
     private InputFileInformation inputFileInformation;

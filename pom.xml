@@ -11,7 +11,12 @@
   <name>file-ingestor</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.minimalism.com</url>
-
+  <repositories>
+    <repository>
+        <id>redhat-ea</id>
+        <url>	https://maven.repository.redhat.com/earlyaccess/all/</url>
+    </repository>
+  </repositories>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>15</maven.compiler.release>
@@ -56,6 +61,17 @@
       <artifactId>avro</artifactId>
       <version>1.10.2</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.8.0</version>
+    </dependency>
+   <!-- https://mvnrepository.com/artifact/io.confluent/kafka-avro-serializer -->
+  <dependency>
+    <groupId>io.confluent</groupId>
+    <artifactId>kafka-avro-serializer</artifactId>
+    <version>5.3.0</version>
+  </dependency>
   </dependencies>
 
   <build>

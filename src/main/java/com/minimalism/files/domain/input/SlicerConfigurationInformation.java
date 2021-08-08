@@ -1,4 +1,4 @@
-package com.minimalism.files.domain;
+package com.minimalism.files.domain.input;
 
 public class SlicerConfigurationInformation {
     private int numberOfThreads;

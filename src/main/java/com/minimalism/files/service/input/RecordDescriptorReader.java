@@ -12,8 +12,8 @@ import javax.json.stream.JsonParser.Event;
 
 import com.minimalism.common.AllEnums.DataTypes;
 import com.minimalism.files.FileSystemConfigHelper;
-import com.minimalism.files.domain.FieldDescriptor;
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.input.FieldDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.exceptions.NoSuchPathException;
 
 public class RecordDescriptorReader {
@@ -117,6 +117,11 @@ public class RecordDescriptorReader {
                     parser.next();
                     recordDescriptor.setEntityClassName(parser.getString());
                     break;
+                    case "target-domain-classname":
+                    parser.next();
+                    recordDescriptor.setTargetDomainClassName(parser.getString());
+                    break;
+                    
                     case "field-separator":
                     parser.next();
                     recordDescriptor.setFieldSeperator((byte)parser.getString().charAt(0));

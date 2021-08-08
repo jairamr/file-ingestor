@@ -1,23 +1,27 @@
-package com.minimalism.files.service.input;
+package com.minimalism.files.service.output.generic;
 
 import java.util.List;
-import com.minimalism.files.domain.FieldDescriptor;
-import com.minimalism.files.domain.RecordDescriptor;
+
 import com.minimalism.files.domain.entities.Entity;
 import com.minimalism.files.domain.entities.Field;
-
+import com.minimalism.files.domain.input.FieldDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
+/**
+ * @author R Jairam Iyer
+ * 
+ */
 public class EntityBuilder {
 
     private EntityBuilder() {}
-
-    
     /** 
      * @param inputRecord
      * @param recordDescriptor
      * @return Entity
      */
     public static Entity build(String inputRecord, RecordDescriptor recordDescriptor) {
-        Entity domainEntity = new Entity("Client_1", recordDescriptor.getEntityClassName(), recordDescriptor.getFieldDescriptors().size());
+        var domainEntity = new Entity(recordDescriptor.getEntityClassName(),
+        recordDescriptor.getTargetDomainClassName(), recordDescriptor.getFieldDescriptors().size());
+        
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
         
         for(int i = 0; i < fieldDescriptions.size(); i++ ) {

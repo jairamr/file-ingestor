@@ -12,7 +12,7 @@ import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.exceptions.NoSuchPathException;
 
 public class InputOutputFileSystem {
-    
+    private InputOutputFileSystem(){}
     /** 
      * @param clientName
      * @throws IOException

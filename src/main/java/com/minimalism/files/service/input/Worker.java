@@ -1,7 +1,8 @@
 package com.minimalism.files.service.input;
 
 import java.util.concurrent.Callable;
-import com.minimalism.files.domain.RecordDescriptor;
+
+import com.minimalism.files.domain.input.RecordDescriptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

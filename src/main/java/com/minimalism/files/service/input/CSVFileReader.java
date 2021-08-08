@@ -10,9 +10,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.minimalism.files.domain.InputFileInformation;
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.domain.entities.Entity;
+import com.minimalism.files.domain.input.InputFileInformation;
+import com.minimalism.files.domain.input.RecordDescriptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +34,20 @@ public class CSVFileReader implements IFileReader{
         this.bufferSize = bufferSize;
         this.recordsFromFile = new HashMap<>();
     }
-
     
     /** 
+     * <p>
+     * The read method runs in the context of a worker thread in an java.util.concurrent.<em>ExecutorService</em>
+     * and return a Future instance containing an <em>InputBufferReadStatus</em> instance. The number of threads
+     * to be used is configurable; it defaults to the number of cores availabletothe JVM. Each thread manages
+     * a single MappedByteBuffer instance, which maps a section of the input file.
+     * </p>
+     * <p>
+     * It uses a <em>MappedByteBuffer</em> to map the input file to an off-heap memory segment. The size
+     * of the buffer defaults to 1 MB, which can be changed through a configuration parameter. This causes
+     * each thread in the ExecutorService to iterate through the input file; after completing one iteration,
+     * the MappedByteBuffer is mapped to a new region in the input file.
+     * </p>
      * @param thisBatchOffsetInFile
      * @param iteration
      * @param numberOfThreads
@@ -49,28 +61,37 @@ public class CSVFileReader implements IFileReader{
         byte[] recordSeparators = recordDescriptor.getRecordSeparator();
     
         if(recordSeparators[1] != 0x00) {
+            logger.info("Record separator byte 0: {}, byte 1: {}", recordSeparators[0], recordSeparators[1]);
             returnValue = processTwoCharRecordSeparator(thisBatchOffsetInFile, iteration, numberOfThreads);
         } else {
             //recordsFromFile = processOneCharRecordSeparator(fcInputFile);
         }
         if(recordsFromFile.size() > 0) {
             logger.info("Number of records read: {}", recordsFromFile.size());
-            InputRecordFormatter formatter = new InputRecordFormatter(recordDescriptor);
-            records = formatter.format(recordsFromFile, recordDescriptor);
+            var formatter = new InputRecordFormatter(recordDescriptor);
+            records = formatter.format(recordsFromFile);
         }
         if(records != null) {
             logger.info("Got records from Formatter: {}", records.size());
-            logger.info("Record: {}", records.get(records.size() - 1));
+            // publish the parsed records.
         }
         return returnValue;
     }
-
-    
     /** 
-     * @param thisBatchOffsetInFile
-     * @param iteration
-     * @param numberOfThreads
-     * @return InputBufferReadStatus
+     * <p>
+     * Windows systems create CSV files with <CR><LF> combination to demarcate records, while Linix
+     * system use either <CR> or <LF>. We handle both cases. The <em>processTwoCharRecordSeparator</em>
+     * method handles CSV files created in Windows Systems.
+     * </p>
+     * <p>
+     * While parsing the input records, the record separaters are filtered out fromthe input byte array.
+     * The resulting byte array from eacg input record has a stream of bytes containing the fields and
+     * the field separators. The <em>InputRecordFormatter</em> class handles the fields and field separators.
+     * </p>
+     * @param thisBatchOffsetInFile - The marker the position in the input file where the current iteration starts.
+     * @param iteration - the number of the current iteration
+     * @param numberOfThreads - the number of threads (and therefore, the number of buffers) being used.
+     * @return InputBufferReadStatus - the out come of processing a single byte buffer.
      */
     private InputBufferReadStatus processTwoCharRecordSeparator(long thisBatchOffsetInFile, int iteration, int numberOfThreads) {
 
@@ -95,7 +116,6 @@ public class CSVFileReader implements IFileReader{
         }
         return readStatus;
     }
-
     
     /** 
      * @param thisBatchOffsetInFile
@@ -209,5 +229,14 @@ public class CSVFileReader implements IFileReader{
             }
         }
         return recordStart;
+    }
+
+    private void setupOutput(){
+        try {
+            FileSystemConfigHelper.getInstance().getServiceOutputDataDefinitionDirectory();
+
+        } catch (IOException e) {
+            logger.error("Error while accessing Definition directory: {}, for service output. Defaulting to filesystem based output", e.getMessage());
+        }
     }
 }

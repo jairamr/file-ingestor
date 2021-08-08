@@ -4,8 +4,8 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 
-import com.minimalism.files.domain.FieldDescriptor;
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.input.FieldDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
 
 public class OutputRecordSchemaGenerator {
 
