@@ -5,5 +5,5 @@ import java.util.List;
 import com.minimalism.files.domain.entities.Entity;
 
 public interface IPublish {
-    void publish(List<Entity> records);
+    void publish(List<Entity> records) throws InterruptedException;
 }

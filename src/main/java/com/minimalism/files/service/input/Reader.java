@@ -2,11 +2,7 @@ package com.minimalism.files.service.input;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -16,16 +12,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import com.minimalism.common.AppConfigHelper;
 import com.minimalism.common.AllEnums.FileTypes;
-import com.minimalism.files.FileSystemConfigHelper;
+import com.minimalism.common.AllEnums.OutputDestinations;
+import com.minimalism.files.domain.entities.Entity;
 import com.minimalism.files.domain.entities.ResidualBufferBytesHandler;
 import com.minimalism.files.domain.input.InputFileInformation;
-import com.minimalism.files.domain.input.RecordDescriptor;
+import com.minimalism.files.domain.input.ServiceContext;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
+import com.minimalism.files.exceptions.RecordDescriptorException;
+import com.minimalism.files.exceptions.ServiceAbortedException;
+import com.minimalism.files.service.output.kafka.BrokerConfiguration;
+import com.minimalism.files.service.output.kafka.BrokerConfigurationReader;
+import com.minimalism.files.service.output.kafka.Publisher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,91 +46,78 @@ import org.slf4j.LoggerFactory;
 public class Reader {
     private static Logger logger = LoggerFactory.getLogger(Reader.class);
     
-    InputFileInformation inputFileInformation;
+    ServiceContext serviceContext;
     SlicerConfigurationInformation slicerConfguration;
-    RecordDescriptor recordDescriptor;
-    String operatingMode;
     private byte[] leftOversFromPreviousIteration;
-    ResidualBufferBytesHandler residualsHandler;
+    //ResidualBufferBytesHandler residualsHandler;
+    BrokerConfiguration brokerConfiguration;
 
-    public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException {
+    public Reader(ServiceContext context, boolean headerPresent) throws NoSuchPathException, IOException {
+        serviceContext = context;
+        this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
+        var slicer = new Slicer(this.serviceContext.getInputFileInformation());
+        this.slicerConfguration = slicer.sliceFile();
+        // this.residualsHandler = 
+        // new ResidualBufferBytesHandler(this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
+        //this.serviceContext.getInputFileInformation().getFileType());
+
+        setupOutput();
+    }
+
+    public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException, RecordDescriptorException {
         
         // We expect the filename is the input file that must be processed. It must have a file name and
         // an extension
-        
-        FileTypes fileType = FileTypes.CSV;
-        Path fullPath = null;
-        String fileExtension = null;
-        try{
-            fileExtension = fileName.substring(fileName.lastIndexOf('.'));
-            if(fileExtension.equalsIgnoreCase(".csv")){
-                fileType = FileTypes.CSV;
-                fullPath = FileSystemConfigHelper.getInstance().getServiceInputDataCSVDirectory(clientName).resolve(fileName);
-            } else if(fileExtension.equalsIgnoreCase(".dat")) {
-                fileType = FileTypes.BIN;
-                fullPath = FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataBinDirectory(clientName).resolve(fileName);
-            } else if(fileExtension.equalsIgnoreCase(".txt")) {
-                fileType = FileTypes.TEXT;
-                fullPath = FileSystemConfigHelper.getInstance().getServiceInputDataCSVDirectory(clientName).resolve(fileName);
-            } else {
-                throw new FileTypeNotSupportedException(String.format("The input file: %s is not supported. Only files with types CSV, BIN or TXT will be processed", fileName));
-            }
-        } catch (IndexOutOfBoundsException e) {
-            throw new InvalidFileException(String.format("The input file named % does not have an extension, indicating the nature of the file (.csv or .dat or.txt).", fileName));
-        } catch (NoSuchPathException e) {
-            throw e;
-        }
-        
-        this.operatingMode = AppConfigHelper.getInstance().getServiceOperatingMode();
-        BasicFileAttributeView basicView = Files.getFileAttributeView(fullPath, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
-            
-        this.inputFileInformation = new InputFileInformation(fullPath.getParent(), fileName, 
-        fileType, basicView.readAttributes().creationTime(), fileExtension, headerPresent);
+        this.serviceContext = new ServiceContext(clientName, fileName);
+        this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
 
-        Slicer slicer = new Slicer(this.inputFileInformation);
+        var slicer = new Slicer(this.serviceContext.getInputFileInformation());
         this.slicerConfguration = slicer.sliceFile();
 
-        this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
-        this.residualsHandler = new ResidualBufferBytesHandler(this.recordDescriptor.getRecordSeparator(), inputFileInformation.getFileType());
+        // this.residualsHandler = 
+        // new ResidualBufferBytesHandler(this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
+        //this.serviceContext.getInputFileInformation().getFileType());
         
+        setupOutput();
     }
 
-    public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException {
+    public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException, RecordDescriptorException {
         this(clientName, Paths.get(path).resolve(fileName).toString(), headerPresent);
     }
-
     
     /** 
      * @return InputFileInformation
      */
     public InputFileInformation getFileInformation() {
-        return inputFileInformation;
+        return this.serviceContext.getInputFileInformation();
     }
-
     
     /** 
      * @return long
      * @throws IOException
      * @throws FileTypeNotSupportedException
      * @throws InterruptedException
+     * @throws NoSuchPathException
+     * @throws ServiceAbortedException
      */
-    public long read() throws IOException, FileTypeNotSupportedException, InterruptedException {
-        logger.info("Reading input file: {}", this.inputFileInformation.getFilePath());
+    public long read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException {
+        logger.info("Reading input file: {}", this.serviceContext.getInputFileInformation().getFilePath());
 
         long numberofRecordsProcessed = 0;
 
-        if(inputFileInformation.getFileType() == FileTypes.CSV) {
-            if(this.operatingMode.equalsIgnoreCase("single")) {
+        if(this.serviceContext.getInputFileInformation().getFileType() == FileTypes.CSV) {
+            if(this.serviceContext.getOperatingMode().equalsIgnoreCase("single")) {
                 processFile(FileTypes.CSV);
             } else {
                 sliceAndProcessFile(FileTypes.CSV);
             }
-        } else if(inputFileInformation.getFileType() == FileTypes.BIN) {
+        } else if(this.serviceContext.getInputFileInformation().getFileType() == FileTypes.BIN) {
             // process binary data file
-        } else if(inputFileInformation.getFileType() ==FileTypes.TEXT) {
+        } else if(this.serviceContext.getInputFileInformation().getFileType() ==FileTypes.TEXT) {
             // process text file
         } else {
-            throw new FileTypeNotSupportedException(String.format("The input file type: %s is not supported. This utility works with comma-separated, binary and text files only.", inputFileInformation.getFileType().name()));
+            throw new FileTypeNotSupportedException(String.format("The input file type: %s is not supported. This utility works with comma-separated, binary and text files only.", 
+            this.serviceContext.getInputFileInformation().getFileType().name()));
         }
         
         return numberofRecordsProcessed;
@@ -150,13 +138,14 @@ public class Reader {
         // }
     }
 
-    
     /** 
      * @param fileType
      * @throws IOException
      * @throws InterruptedException
+     * @throws NoSuchPathException
+     * @throws ServiceAbortedException
      */
-    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException {
+    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;
@@ -184,25 +173,54 @@ public class Reader {
                 List<InputBufferReadStatus> resultsFromWorkers = new ArrayList<>();
                 iterationResults.stream().forEach(i -> {
                     try {
-                        logger.info((i.get().toString()));
-                        resultsFromWorkers.add(i.get());
+                        //logger.info((i.get().toString()));
+                        if(i.isDone()) {
+                            resultsFromWorkers.add(i.get());
+                        }
                     } catch (InterruptedException | ExecutionException e) {
                         Thread.currentThread().interrupt();
                     }
                 });
-                this.leftOversFromPreviousIteration = this.residualsHandler.processResiduals(resultsFromWorkers, leftOversFromPreviousIteration);
-                List<ByteArrayOutputStream> residualRecords = this.residualsHandler.getResidualRecords();
-                // var i = 0;
-                // for(ByteArrayOutputStream b : residualRecords) {
-                //     logger.info("Residual record from buffer: {} --- {}", i, new String(b.toByteArray()));
-                //     i++;
-                // }
+                
+                // only when all threads have completed processing, we should be processing the 
+                // residual bytes from the buffers
+                if(resultsFromWorkers.size() == workers.size()) {
+                    var anyThreadAborted = resultsFromWorkers.stream().anyMatch(InputBufferReadStatus::hasError);
+                    if(!anyThreadAborted) {
+                        handleResidualBytesInBuffers(resultsFromWorkers);
+                    } else {
+                        // if thread has aborted, many records are lost! Abort this batch!
+                        throw new ServiceAbortedException("One ormore threads aborted with an exception.");
+                    }
+                }
             }
         } finally {
             if(inputBufferReaderService != null)
                 shutdownAndAwaitTermination(inputBufferReaderService);
         }
     }
+
+    private void handleResidualBytesInBuffers(List<InputBufferReadStatus> resultsFromWorkers) throws IOException {
+        var residualsHandler = new ResidualBufferBytesHandler
+        (this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
+            this.serviceContext.getInputFileInformation().getFileType());
+
+        this.leftOversFromPreviousIteration = 
+            residualsHandler.processResiduals
+            (resultsFromWorkers, leftOversFromPreviousIteration);
+    
+        List<ByteArrayOutputStream> residualRecords = residualsHandler.getResidualRecords();
+    
+        // format and publish residual records
+        var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
+        List<Entity> records = formatter.format(residualRecords);
+        if(records != null) {
+            logger.info("Got residual records from Formatter: {}", records.size());
+            // publish the parsed records.
+            publishRecords(records); 
+        }
+    }
+
     /** 
      * @param pool
      */
@@ -223,16 +241,16 @@ public class Reader {
           Thread.currentThread().interrupt();
         }
       }
-
     
     /** 
      * @param fileType
      * @param thisBatchOffsetInFile
      * @param iteration
      * @return List<Callable<InputBufferReadStatus>>
+     * @throws NoSuchPathException
      */
     private List<Callable<InputBufferReadStatus>> prepareWorkers(FileTypes fileType, 
-                                                    long thisBatchOffsetInFile, int iteration) {
+                                                    long thisBatchOffsetInFile, int iteration) throws NoSuchPathException {
         List<Callable<InputBufferReadStatus>> returnValue = new ArrayList<>();
 
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
@@ -240,14 +258,13 @@ public class Reader {
 
         for(int workerId = 0; workerId < numberOfBuffers; workerId++) {
             if(fileType == FileTypes.CSV) {
-                IFileReader reader = new CSVFileReader(workerId, inputFileInformation, bufferSize);
-                Worker worker = new Worker(thisBatchOffsetInFile, iteration, reader, numberOfBuffers, recordDescriptor);
+                IFileReader reader = new CSVFileReader(workerId, this.serviceContext, bufferSize);
+                var worker = new Worker(thisBatchOffsetInFile, iteration, reader, numberOfBuffers);
                 returnValue.add(worker);
             }
         }
         return returnValue;
     }
-
     
     /** 
      * @param workers
@@ -256,5 +273,45 @@ public class Reader {
      */
     private void resetWorkers(List<Callable<InputBufferReadStatus>> workers, long offsetInFile, int iteration) {
         workers.stream().forEach(w -> ((Worker)w).reset(offsetInFile, iteration));
+    }
+
+    private void publishRecords(List<Entity> records) {
+        if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
+            var kafkaPublisher = new Publisher(this.brokerConfiguration);
+            try {
+                kafkaPublisher.publish(records);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private void setupOutput() throws NoSuchPathException{
+        try {
+            switch(this.serviceContext.getDestinationType()) {
+                case FILE_SYSTEM:
+                break;
+                case JMS:
+                break;
+                case KAFKA:
+                    BrokerConfigurationReader brokerConfigurationReader = 
+                    new BrokerConfigurationReader(this.serviceContext.getClientName(), 
+                    this.serviceContext.getRecordName());
+                    this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
+                break;
+                case RABBIT_MQ:
+                break;
+                case RESTFUL:
+                break;
+                case SQL_SERVER:
+                break;
+                case WEB_SOCKET:
+                break;
+                default:
+                break;
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            logger.error("Error while accessing Definition directory: {}, for service output. Defaulting to filesystem based output", e.getMessage());
+        }
     }
 }

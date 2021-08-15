@@ -12,6 +12,7 @@ public class AppConfigHelper {
     private static String FILE_READ_BUFFER_SISE = "file.read.buffer.size";
     private static String SERVICE_OPERATING_MODE = "service.operating.mode";
     private static String SERVICE_OUTPUT_ENDPOINT = "service.output.endpoint";
+    private static String SERVICE_OUTPUT_FAILOVER_ENDPOINT = "service.output.failover.endpoint";
     
     private static int KB_SCALER = 1024;
     
@@ -19,9 +20,9 @@ public class AppConfigHelper {
     private static Properties serviceProperties = new Properties();
     
     private AppConfigHelper() throws IOException {
-        Path basePath = Paths.get(".").toAbsolutePath();
-        Path toPropertiesFile = basePath.resolve("src/main/resources/app.properties");
-        try(FileReader reader = new FileReader(toPropertiesFile.toString())) {
+        var basePath = Paths.get(".").toAbsolutePath();
+        var toPropertiesFile = basePath.resolve("src/main/resources/app.properties");
+        try(var reader = new FileReader(toPropertiesFile.toString())) {
             serviceProperties.load(reader);
         }
     }
@@ -61,5 +62,8 @@ public class AppConfigHelper {
     }
     public String getOutputEndpoint() {
         return serviceProperties.getProperty(SERVICE_OUTPUT_ENDPOINT);
+    }
+    public String getOutputFailoverEndpoint() {
+        return serviceProperties.getProperty(SERVICE_OUTPUT_FAILOVER_ENDPOINT);
     }
 }

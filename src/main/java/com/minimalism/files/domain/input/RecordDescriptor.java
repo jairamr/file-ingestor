@@ -10,6 +10,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RecordDescriptor {
     private static char CR = '\r';
     private static char LF = '\n';
+    private String recordName;
     private RecordTypes recordType;
     private byte fieldSeperator;
     private byte[] recordSeparator;
@@ -39,6 +40,12 @@ public class RecordDescriptor {
         this.fieldDescriptors = new ArrayList<>();
     }
     
+    public String getRecordName() {
+        return this.recordName;
+    }
+    public void setRecordName(String recordName) {
+        this.recordName = recordName;
+    }
     /** 
      * @return RecordTypes
      */

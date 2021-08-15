@@ -31,14 +31,14 @@ public class FileSystemConfigHelper {
     private static String SERVICE_LOST_AND_FOUND_DIRECTORY = "service.lost.and.found.directory";
 
     private static FileSystemConfigHelper instance;
-    private static Properties fileSystemConfigProperties;
+    private static Properties fileSystemConfigProperties = new Properties();
     
     private FileSystemConfigHelper() throws IOException {
-        fileSystemConfigProperties = new Properties();
-        Path basePath = Paths.get(".").toAbsolutePath();
-        Path toPropertiesFile = basePath.resolve("src/main/resources/filesystem.properties");
-        FileReader reader = new FileReader(toPropertiesFile.toString());
-        fileSystemConfigProperties.load(reader);
+        var basePath = Paths.get(".").toAbsolutePath();
+        var toPropertiesFile = basePath.resolve("src/main/resources/filesystem.properties");
+        try(var reader = new FileReader(toPropertiesFile.toString())) {
+            fileSystemConfigProperties.load(reader);
+        }
     }
 
     
@@ -113,8 +113,8 @@ public class FileSystemConfigHelper {
      * @throws IOException
      */
     public Path getServiceOutputDirectory(String clientName) throws NoSuchPathException, IOException {
-        Path serviceRootPath = AppConfigHelper.getInstance().getServiceRootDirectory();
-        Path clientRoot = serviceRootPath.resolve(clientName);
+        var serviceRootPath = AppConfigHelper.getInstance().getServiceRootDirectory();
+        var clientRoot = serviceRootPath.resolve(clientName);
         if(!Files.exists(clientRoot, LinkOption.NOFOLLOW_LINKS)) {
             throw new NoSuchPathException(String.format("The file system with root at %s, does not have a directory for %s.", serviceRootPath.toString(), clientName));
         }
@@ -141,8 +141,8 @@ public class FileSystemConfigHelper {
      * @throws IOException
      */
     public Path getServiceInputDataCSVDirectory(String clientName) throws NoSuchPathException, IOException {
-        Path serviceRootPath = AppConfigHelper.getInstance().getServiceRootDirectory();
-        Path clientRoot = serviceRootPath.resolve(clientName);
+        var serviceRootPath = AppConfigHelper.getInstance().getServiceRootDirectory();
+        var clientRoot = serviceRootPath.resolve(clientName);
         if(!Files.exists(clientRoot, LinkOption.NOFOLLOW_LINKS)) {
             throw new NoSuchPathException(String.format("The file system with root at %s, does not have a directory for %s.", serviceRootPath.toString(), clientName));
         }
@@ -278,12 +278,9 @@ public class FileSystemConfigHelper {
      * @throws IOException
      */
     public Path getServiceOutputDataDefinitionDirectory(String clientName) throws NoSuchPathException, IOException {
-        Path serviceRootPath = AppConfigHelper.getInstance().getServiceRootDirectory();
-        Path clientRoot = serviceRootPath.resolve(clientName);
-        if(!Files.exists(clientRoot, LinkOption.NOFOLLOW_LINKS)) {
-            throw new NoSuchPathException(String.format("The file system with root at %s, does not have a directory for %s.", serviceRootPath.toString(), clientName));
-        }
-        Path outputDataDefinitionDirectory = clientRoot.resolve(getServiceOutputDataDefinitionDirectory());
+        var outputDirectory = getServiceOutputDirectory(clientName);
+        
+        Path outputDataDefinitionDirectory = outputDirectory.resolve(getServiceOutputDataDefinitionDirectory());
         if(!Files.exists(outputDataDefinitionDirectory, LinkOption.NOFOLLOW_LINKS)) {
             throw new NoSuchPathException(String.format("The file system does not have a directory for %s.", outputDataDefinitionDirectory));
         }

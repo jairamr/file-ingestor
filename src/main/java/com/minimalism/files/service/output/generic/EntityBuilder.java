@@ -2,6 +2,7 @@ package com.minimalism.files.service.output.generic;
 
 import java.util.List;
 
+import com.minimalism.files.domain.entities.Employee;
 import com.minimalism.files.domain.entities.Entity;
 import com.minimalism.files.domain.entities.Field;
 import com.minimalism.files.domain.input.FieldDescriptor;
@@ -23,8 +24,7 @@ public class EntityBuilder {
         recordDescriptor.getTargetDomainClassName(), recordDescriptor.getFieldDescriptors().size());
         
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
-        
-        for(int i = 0; i < fieldDescriptions.size(); i++ ) {
+        for(var i = 0; i < fieldDescriptions.size(); i++ ) {
             domainEntity.addField(buildField(fieldDescriptions.get(i)));
         }
         
@@ -35,6 +35,9 @@ public class EntityBuilder {
         return domainEntity;
     }
 
+    public static Employee buildDomainObject(String inputRecord, RecordDescriptor recordDescriptor) {
+        return new Employee(recordDescriptor.getFieldSeparatorAsString(), inputRecord);
+    }
     
     /** 
      * @param fieldDescriptor
@@ -51,4 +54,6 @@ public class EntityBuilder {
 
         return field;
     }
+
+
 }

@@ -1,8 +1,13 @@
 package com.minimalism.files.domain.entities;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import javax.json.JsonObject;
 
@@ -71,6 +76,15 @@ public class FieldTests {
         JsonObject result = iut1.forAvroSchema();
         assertNotNull(result);
         System.out.println(result.toString());
+    }
+
+    @Test
+    void textTimeFormat_am_pm() {
+        String time = "11:32:56 PM";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:m:s a", Locale.US);
+        LocalTime lt = LocalTime.parse(time, formatter);
+        assertEquals(23, lt.getHour());
+        
     }
 
     @Test

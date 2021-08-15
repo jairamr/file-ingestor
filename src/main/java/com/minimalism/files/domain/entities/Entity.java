@@ -113,19 +113,19 @@ public class Entity implements IValidation {
     }
 
     public JsonObject forAvroSchema() {
-        JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder();
+        JsonArrayBuilder fieldsArrayItemsBuilder = Json.createArrayBuilder();
         for(Field f : this.fields) {
-            fieldsBuilder.add(f.forAvroSchema());
+            fieldsArrayItemsBuilder.add(f.forAvroSchema());
         }
+
         return Json.createObjectBuilder()
-        .add("namespace", "com.minimalism.files.domain.entoties")
+        .add("namespace", "com.minimalism.files.domain.entities")
         .add("name", this.getClass().getSimpleName())
         .add("type", "record")
-        .add("fields", fieldsBuilder)
+        .add("fields", fieldsArrayItemsBuilder)
         .build();
     }
 
-    
     /** 
      * 
      * @param propertyName

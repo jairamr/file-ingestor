@@ -2,8 +2,6 @@ package com.minimalism.files.service.input;
 
 import java.util.concurrent.Callable;
 
-import com.minimalism.files.domain.input.RecordDescriptor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,14 +12,12 @@ public class Worker implements Callable<InputBufferReadStatus> {
     private long thisBatchOffsetInFile;
     private int iteration;
     private IFileReader fileReader;
-    private RecordDescriptor recordDescriptor;
 
-    public Worker(long thisBatchOffsetInFile, int iteration, IFileReader fileReader, int numberOfThreads, RecordDescriptor recordDescriptor) {
+    public Worker(long thisBatchOffsetInFile, int iteration, IFileReader fileReader, int numberOfThreads) {
         this.thisBatchOffsetInFile = thisBatchOffsetInFile;
         this.iteration = iteration;
         this.fileReader = fileReader;
         this.numberOfThreads = numberOfThreads;
-        this.recordDescriptor = recordDescriptor;
     }
 
     
@@ -32,7 +28,7 @@ public class Worker implements Callable<InputBufferReadStatus> {
     @Override
     public InputBufferReadStatus call() throws Exception {
         logger.info("Thread: {} started...", Thread.currentThread().getName());
-        return this.fileReader.read(this.thisBatchOffsetInFile, this.iteration, this.numberOfThreads, this.recordDescriptor);
+        return this.fileReader.read(this.thisBatchOffsetInFile, this.iteration, this.numberOfThreads);
     }
 
     

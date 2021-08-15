@@ -20,20 +20,24 @@ public class AllEnums {
     public enum DataTypes {
         BOOLEAN(0),
         CURRENCY(1),
-        DATE(2),
+        LOCALDATE(2),
         EMAIL(3),
         FLOAT(4),
         INTEGER(5),
         LONG(6),
         DOUBLE(7),
         STRING(8),
-        TIME(9);
+        LOCALTIME(9);
         
         private int dataType;
         DataTypes(int dataType) {
             this.dataType = dataType;
         }
         public String getTypeName() {
+            return this.getType().getSimpleName();
+        }
+
+        public Class<?> getType() {
             Class<?> type;
             switch (this.dataType) {
                 case 0:
@@ -70,7 +74,7 @@ public class AllEnums {
                 type = String.class;
                 break;
             }
-            return type.getName();
+            return type;
         }
     }
 
@@ -92,5 +96,15 @@ public class AllEnums {
         ARCHIVE_OUTPUT,
         ARCHIVE_OUTPUT_CSV,
         ARCHIVE_OUTPUT_BIN
+    }
+
+    public enum OutputDestinations {
+        FILE_SYSTEM,
+        JMS,
+        KAFKA,
+        RABBIT_MQ,
+        RESTFUL,
+        SQL_SERVER,
+        WEB_SOCKET
     }
 }

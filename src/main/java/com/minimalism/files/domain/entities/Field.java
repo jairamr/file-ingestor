@@ -4,8 +4,9 @@ import java.util.BitSet;
 import java.util.Objects;
 
 import javax.json.Json;
-import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
+
+import com.minimalism.common.AllEnums.DataTypes;
 
 public class Field {
     private static short TYPE_BIT = 3;
@@ -123,21 +124,77 @@ public class Field {
         flags.set(MAX_LENGTH_BIT, value.toString().length() <= this.maximumLength);
         flags.set(NULL_VALUE_BIT, !this.nullable ? (value != null) : value == null);
 
-        this.value = value;
+        Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
+        var sValue = value.toString();
+        
+        switch(targetType.getSimpleName()) {
+            case "Boolean":
+                this.value = Boolean.valueOf(sValue);
+            break;
+            case "Currency":
+                this.value = sValue;
+            break;
+            case "LocalDate":
+                // DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+                // if(sValue.contains("/")) {
+                //     formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                // } else if(sValue.contains(" ")) {
+                //     formatter = DateTimeFormatter.ofPattern("M d yyyy");
+                // }
+                // this.value = LocalDate.parse(sValue, formatter);
+                this.value = sValue;
+            break;
+            case "String":
+                this.value = sValue;
+            break;
+            case "Float":
+                this.value = (Float)value;
+            break;
+            case "Integer":
+                this.value = Integer.valueOf(sValue);
+            break;
+            case "Long":
+                this.value = Long.valueOf(sValue);
+            break;
+            case "Double":
+                this.value = Double.valueOf(sValue);
+                break;
+            case "LocalTime":
+                // DateTimeFormatter timeformatter = DateTimeFormatter.ofPattern("h:m:s a", Locale.US);
+                // this.value = LocalTime.parse(sValue, timeformatter);
+                this.value= sValue;
+            break;
+            default:
+                this.value = value;
+            break;
+        }
     }
-    public JsonObject forAvroSchema() {
-        JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder()
-        .add(Json.createObjectBuilder()
-            .add("name", this.getName())
-            .add("type", this.getTypeName().toLowerCase()));
 
+    public JsonObject forAvroSchema() {
+        String avroRulesName;
+        String avroRulesTypeName;
+        if(this.getName().contains("-")) {
+            avroRulesName = this.getName().replace("-", "_");
+        } else {
+            avroRulesName = this.getName();
+        }
+        if(this.getTypeName().equals("Integer")) {
+            avroRulesTypeName = "int";
+        } else if(this.getTypeName().equals("Currency")) {
+            avroRulesTypeName = "string";
+        } else if(this.getTypeName().equals("LocalDate")) {
+            avroRulesTypeName = "string";
+        } else if(this.getTypeName().equals("LocalTime")) {
+            avroRulesTypeName = "string";
+        } else {
+            avroRulesTypeName = this.getTypeName().toLowerCase();
+        }
+       
         return Json.createObjectBuilder()
-        .add("type", "record")
-        .add("name", this.getClass().getSimpleName())
-        .add("fields", fieldsBuilder)
+        .add("name", avroRulesName)
+        .add("type", avroRulesTypeName)
         .build();
     }
-    
     /** 
      * @return boolean
      */

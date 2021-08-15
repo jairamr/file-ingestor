@@ -9,13 +9,13 @@ import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 
 public class Employee {
-    private String empID;
+    private String empId;
     private String namePrefix;
     private String firstName;
     private String middleInitial;
     private String lastName;
     private String gender;
-    private String eMail;
+    private String emailId;
     private String fathersName;
     private String mothersName;
     private String mothersMaidenName;
@@ -28,39 +28,38 @@ public class Employee {
     private String halfOfJoining;
     private short yearOfJoining;
     private short monthOfJoining;
-    private String monthNameOfJoining;
-    private String shortMonth;
+    private String monthOfJoiningName;
+    private String monthOfJoiningShortname;
     private short dayOfJoining;
     private String dowOfJoining;
-    private String shortDOW;
+    private String dowOfJoiningShortname;
     private double ageInCompany;
     private double salary;
-    private double lastPercentHike;
-    private String SSN;
-    private String phoneNo;
+    private double lastHikePercent;
+    private String ssn;
+    private String phoneNumber;
     private String placeName;
     private String county;
     private String city;
     private String state;
     private String zip;
     private String region;
-    private String userName;
+    private String username;
     private String password;
 
-    
     /** 
      * @param fieldSeparator
      * @param commaSeparated
      */
     public void makeFromFile(String fieldSeparator, String commaSeparated) {
         String[] fields = commaSeparated.split(fieldSeparator);
-        this.setEmpID(fields[0]);
+        this.setEmpId(fields[0]);
         this.setNamePrefix(fields[1]);
         this.setFirstName(fields[2]);
         this.setMiddleInitial(fields[3]);
         this.setLastName(fields[4]);
         this.setGender(fields[5]);
-        this.seteMail(fields[6]);
+        this.setEmailId(fields[6]);
         this.setFathersName(fields[7]);
         this.setMothersName(fields[8]);
         this.setMothersMaidenName(fields[9]);
@@ -73,23 +72,23 @@ public class Employee {
         this.setHalfOfJoining(fields[16]);
         this.setYearOfJoining(fields[17]);
         this.setMonthOfJoining(fields[18]);
-        this.setMonthNameOfJoining(fields[19]);
-        this.setShortMonth(fields[20]);
+        this.setMonthOfJoiningName(fields[19]);
+        this.setMonthOfJoiningShortname(fields[20]);
         this.setDayOfJoining(fields[21]);
         this.setDowOfJoining(fields[22]);
-        this.setShortDOW(fields[23]);
+        this.setDowOfJoiningShortname(fields[23]);
         this.setAgeInCompany(fields[24]);
         this.setSalary(fields[25]);
-        this.setLastPercentHike(fields[26]);
+        this.setLastHikePercent(fields[26]);
         this.setSSN(fields[27]);
-        this.setPhoneNo(fields[28]);
+        this.setPhoneNumber(fields[28]);
         this.setPlaceName(fields[29]);
         this.setCounty(fields[30]);
         this.setCity(fields[31]);
         this.setState(fields[32]);
         this.setZip(fields[33]);
         this.setRegion(fields[34]);
-        this.setUserName(fields[35]);
+        this.setUsername(fields[35]);
         this.setPassword(fields[36]);
     }
 
@@ -101,15 +100,15 @@ public class Employee {
     /** 
      * @return String
      */
-    public String getEmpID() {
-        return empID;
+    public String getEmpId() {
+        return empId;
     }
     
     /** 
      * @param empID
      */
-    public void setEmpID(String empID) {
-        this.empID = empID;
+    public void setEmpId(String empId) {
+        this.empId = empId;
     }
     
     /** 
@@ -185,15 +184,15 @@ public class Employee {
     /** 
      * @return String
      */
-    public String geteMail() {
-        return eMail;
+    public String getEmailId() {
+        return emailId;
     }
     
     /** 
      * @param eMail
      */
-    public void seteMail(String eMail) {
-        this.eMail = eMail;
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
     }
     
     /** 
@@ -395,29 +394,29 @@ public class Employee {
     /** 
      * @return String
      */
-    public String getMonthNameOfJoining() {
-        return monthNameOfJoining;
+    public String getMonthOfJoiningName() {
+        return this.monthOfJoiningName;
     }
     
     /** 
      * @param monthNameOfJoining
      */
-    public void setMonthNameOfJoining(String monthNameOfJoining) {
-        this.monthNameOfJoining = monthNameOfJoining;
+    public void setMonthOfJoiningName(String monthOfJoiningName) {
+        this.monthOfJoiningName = monthOfJoiningName;
     }
     
     /** 
      * @return String
      */
-    public String getShortMonth() {
-        return shortMonth;
+    public String getMonthOfJoiningShortname() {
+        return this.monthOfJoiningShortname;
     }
     
     /** 
      * @param shortMonth
      */
-    public void setShortMonth(String shortMonth) {
-        this.shortMonth = shortMonth;
+    public void setMonthOfJoiningShortname(String monthOfJoiningShortname) {
+        this.monthOfJoiningShortname = monthOfJoiningShortname;
     }
     
     /** 
@@ -458,15 +457,15 @@ public class Employee {
     /** 
      * @return String
      */
-    public String getShortDOW() {
-        return shortDOW;
+    public String getDowOfJoiningShortName() {
+        return this.dowOfJoiningShortname;
     }
     
     /** 
      * @param shortDOW
      */
-    public void setShortDOW(String shortDOW) {
-        this.shortDOW = shortDOW;
+    public void setDowOfJoiningShortname(String dowOfJoiningShortname) {
+        this.dowOfJoiningShortname = dowOfJoiningShortname;
     }
     
     /** 
@@ -515,60 +514,60 @@ public class Employee {
      * @return double
      */
     public double getLastPercentHike() {
-        return lastPercentHike;
+        return this.lastHikePercent;
     }
     
     /** 
      * @param lastPercentHike
      */
-    public void setLastPercentHike(double lastPercentHike) {
-        this.lastPercentHike = lastPercentHike;
+    public void setLastHikePercent(double lastHikePercent) {
+        this.lastHikePercent = lastHikePercent;
     }
     
     /** 
      * @param lastPercentHike
      */
-    public void setLastPercentHike(String lastPercentHike) {
-        var percentIndex = lastPercentHike.indexOf("%");
+    public void setLastHikePercent(String lastHikePercent) {
+        var percentIndex = lastHikePercent.indexOf("%");
         if(percentIndex != -1) {
-            lastPercentHike = lastPercentHike.substring(0, percentIndex);
+            lastHikePercent = lastHikePercent.substring(0, percentIndex);
         }
-        this.lastPercentHike = Double.valueOf(lastPercentHike);
+        this.lastHikePercent = Double.valueOf(lastHikePercent);
     }
     
     /** 
      * @return String
      */
     public String getSSN() {
-        return SSN;
+        return this.ssn;
     }
     
     /** 
      * @param sSN
      */
-    public void setSSN(String sSN) {
-        SSN = sSN;
+    public void setSSN(String ssn) {
+        this.ssn = ssn;
     }
     
     /** 
      * @return String
      */
-    public String getPhoneNo() {
-        return phoneNo;
+    public String getPhoneNumber() {
+        return this.phoneNumber;
     }
     
     /** 
      * @param phoneNo
      */
-    public void setPhoneNo(String phoneNo) {
-        this.phoneNo = phoneNo;
+    public void setPhoneNumber(String phoneNo) {
+        this.phoneNumber = phoneNo;
     }
     
     /** 
      * @return String
      */
     public String getPlaceName() {
-        return placeName;
+        return this.placeName;
     }
     
     /** 
@@ -582,7 +581,7 @@ public class Employee {
      * @return String
      */
     public String getCounty() {
-        return county;
+        return this.county;
     }
     
     /** 
@@ -596,7 +595,7 @@ public class Employee {
      * @return String
      */
     public String getCity() {
-        return city;
+        return this.city;
     }
     
     /** 
@@ -610,7 +609,7 @@ public class Employee {
      * @return String
      */
     public String getState() {
-        return state;
+        return this.state;
     }
     
     /** 
@@ -624,7 +623,7 @@ public class Employee {
      * @return String
      */
     public String getZip() {
-        return zip;
+        return this.zip;
     }
     
     /** 
@@ -651,15 +650,15 @@ public class Employee {
     /** 
      * @return String
      */
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return this.username;
     }
     
     /** 
      * @param userName
      */
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
     
     /** 
@@ -681,7 +680,7 @@ public class Employee {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(this.getSSN(), this.geteMail(), this.getEmpID());
+        return Objects.hash(this.getSSN(), this.getEmailId(), this.getEmpId());
     }
     
     /** 

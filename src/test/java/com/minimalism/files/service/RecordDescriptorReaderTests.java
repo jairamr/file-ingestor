@@ -8,6 +8,7 @@ import com.minimalism.common.AllEnums.DataTypes;
 import com.minimalism.common.AllEnums.RecordTypes;
 import com.minimalism.files.domain.input.FieldDescriptor;
 import com.minimalism.files.domain.input.RecordDescriptor;
+import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.service.input.RecordDescriptorReader;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -18,7 +19,7 @@ public class RecordDescriptorReaderTests {
     private static RecordDescriptor hrRecordDescriptor;
 
     @BeforeAll
-    static void parseDefinitionFile() {
+    static void parseDefinitionFile() throws RecordDescriptorException {
         hrRecordDescriptor = RecordDescriptorReader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
     }
 
@@ -150,7 +151,7 @@ public class RecordDescriptorReaderTests {
         FieldDescriptor iut = hrRecordDescriptor.getFieldDescriptors().stream().filter(fd -> fd.getPosition() == 11).findFirst().orElse(null);
         assertEquals("date-of-birth", iut.getFieldName());
         assertEquals(11, iut.getPosition());
-        assertEquals(DataTypes.DATE, iut.getDatatype());
+        assertEquals(DataTypes.LOCALDATE, iut.getDatatype());
         assertEquals(8, iut.getMinimumLength());
         assertEquals(15, iut.getMaximumLength());
         assertEquals(false, iut.isNullAllowed());
@@ -161,7 +162,7 @@ public class RecordDescriptorReaderTests {
         FieldDescriptor iut = hrRecordDescriptor.getFieldDescriptors().stream().filter(fd -> fd.getPosition() == 12).findFirst().orElse(null);
         assertEquals("time-of-birth", iut.getFieldName());
         assertEquals(12, iut.getPosition());
-        assertEquals(DataTypes.TIME, iut.getDatatype());
+        assertEquals(DataTypes.LOCALTIME, iut.getDatatype());
         assertEquals(10, iut.getMinimumLength());
         assertEquals(12, iut.getMaximumLength());
         assertEquals(true, iut.isNullAllowed());

@@ -5,6 +5,8 @@ import java.io.IOException;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
+import com.minimalism.files.exceptions.RecordDescriptorException;
+import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.input.Reader;
 
 import org.slf4j.Logger;
@@ -25,9 +27,13 @@ public class App
             long byteCount = reader.read();
             double duration = (double)(System.currentTimeMillis() - startTime);
             logger.info("Read {} bytes in {} seconds", byteCount, duration/1000);
-        }catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException e) {
+        } catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException | RecordDescriptorException | ServiceAbortedException e) {
             Thread.currentThread().interrupt();
             e.printStackTrace();
+            logger.error("Service terminated with error due to: {}", e.getMessage());
+            if(logger.isDebugEnabled()) {
+                logger.debug("Service terminated with error due to: {} and a stack trace of {}", e.getMessage(), e.getStackTrace());
+            }
         }
     }
 }

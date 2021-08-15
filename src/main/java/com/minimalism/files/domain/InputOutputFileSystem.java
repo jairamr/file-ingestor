@@ -18,84 +18,84 @@ public class InputOutputFileSystem {
      * @throws IOException
      */
     public static void createFileSystem(String clientName) throws IOException {
-        Path root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());
+        var root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());
         if(!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
             Files.createDirectory(root);
         }
         // check if client path is created
-        Path clientPath = root.resolve(clientName.replaceAll(" ", "_"));
+        var clientPath = root.resolve(clientName.replaceAll(" ", "_"));
         if(!Files.exists(clientPath)) {
             Files.createDirectory(clientPath);
         }
         // check if input directories exist
-        Path inputDirectoryPath = clientPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDirectory());
+        var inputDirectoryPath = clientPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDirectory());
         if(!Files.exists(inputDirectoryPath)) {
             Files.createDirectory(inputDirectoryPath);
         }
         // check input sub-directories
-        Path inputCSVDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDataCSVDirectory());
+        var inputCSVDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDataCSVDirectory());
         if(!Files.exists(inputCSVDirectoryPath)) {
             Files.createDirectory(inputCSVDirectoryPath);
         }
-        Path inputBinDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDataBinDirectory());
+        var inputBinDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDataBinDirectory());
         if(!Files.exists(inputBinDirectoryPath)) {
             Files.createDirectory(inputBinDirectoryPath);
         }
-        Path inputDataDefinitionDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDataDefinitionDirectory());
+        var inputDataDefinitionDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInputDataDefinitionDirectory());
         if(!Files.exists(inputDataDefinitionDirectoryPath)) {
             Files.createDirectory(inputDataDefinitionDirectoryPath);
         }
         //Check output directory
-        Path outputDirectoryPath = clientPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDirectory());
+        var outputDirectoryPath = clientPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDirectory());
         if(!Files.exists(outputDirectoryPath)) {
             Files.createDirectory(outputDirectoryPath);
         }
         // check output sub-directories
-        Path outputCSVDirectoryPath = outputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDataCSVDirectory());
+        var outputCSVDirectoryPath = outputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDataCSVDirectory());
         if(!Files.exists(outputCSVDirectoryPath)) {
             Files.createDirectory(outputCSVDirectoryPath);
         }
-        Path outputBinDirectoryPath = outputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDataBinDirectory());
+        var outputBinDirectoryPath = outputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDataBinDirectory());
         if(!Files.exists(outputBinDirectoryPath)) {
             Files.createDirectory(outputBinDirectoryPath);
         }
-        Path outputDataDefinitionDirectoryPath = outputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDataDefinitionDirectory());
+        var outputDataDefinitionDirectoryPath = outputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceOutputDataDefinitionDirectory());
         if(!Files.exists(outputDataDefinitionDirectoryPath)) {
             Files.createDirectory(outputDataDefinitionDirectoryPath);
         }
         // check instrumentation directory
-        Path instrumentationDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInstrumentationDirectory());
+        var instrumentationDirectoryPath = inputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceInstrumentationDirectory());
         if(!Files.exists(instrumentationDirectoryPath)) {
             Files.createDirectory(instrumentationDirectoryPath);
         }
         // check archive directories
-        Path archiveDirectoryPath = clientPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveDirectory());
+        var archiveDirectoryPath = clientPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveDirectory());
         if(!Files.exists(archiveDirectoryPath)) {
             Files.createDirectory(archiveDirectoryPath);
         }
-        Path archiveInputDirectoryPath = archiveDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveInputDataDirectory());
+        var archiveInputDirectoryPath = archiveDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveInputDataDirectory());
         if(!Files.exists(archiveInputDirectoryPath)) {
             Files.createDirectory(archiveInputDirectoryPath);
         }
-        Path archiveOutputDirectoryPath = archiveDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataDirectory());
+        var archiveOutputDirectoryPath = archiveDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataDirectory());
         if(!Files.exists(archiveOutputDirectoryPath)) {
             Files.createDirectory(archiveOutputDirectoryPath);
         }
         // check archive input sub-directories
-        Path archiveInputCSVDirectoryPath = archiveInputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveInputDataCSVDirectory());
+        var archiveInputCSVDirectoryPath = archiveInputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveInputDataCSVDirectory());
         if(!Files.exists(archiveInputCSVDirectoryPath)) {
             Files.createDirectory(archiveInputCSVDirectoryPath);
         }
-        Path archiveInputBinDirectoryPath = archiveInputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveInputDataBinDirectory());
+        var archiveInputBinDirectoryPath = archiveInputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveInputDataBinDirectory());
         if(!Files.exists(archiveInputBinDirectoryPath)) {
             Files.createDirectory(archiveInputBinDirectoryPath);
         }
         // check archive output sub-directories
-        Path archiveOutputCSVDirectoryPath = archiveOutputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataCSVDirectory());
+        var archiveOutputCSVDirectoryPath = archiveOutputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataCSVDirectory());
         if(!Files.exists(archiveOutputCSVDirectoryPath)) {
             Files.createDirectory(archiveOutputCSVDirectoryPath);
         }
-        Path archiveOutputBinDirectoryPath = archiveOutputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataBinDirectory());
+        var archiveOutputBinDirectoryPath = archiveOutputDirectoryPath.resolve(FileSystemConfigHelper.getInstance().getServiceArchiveOutputDataBinDirectory());
         if(!Files.exists(archiveOutputBinDirectoryPath)) {
             Files.createDirectory(archiveOutputBinDirectoryPath);
         }

@@ -1,5 +1,6 @@
 package com.minimalism.files.service.input;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,8 @@ public class InputRecordFormatter {
             ByteBuffer inputRecord = inputFileRecords.get(i);
             try{
                 records.add(recordNumber++, 
-                EntityBuilder.build(new String(inputRecord.array()), recordDescriptor));
+                EntityBuilder.build(new String(inputRecord.array()), this.recordDescriptor));
+
             } catch (Exception e) {
                 logger.error("Exception while adding record Entity: message: {}, stack:{}", e.getMessage(), e.getStackTrace());
             }
@@ -43,4 +45,16 @@ public class InputRecordFormatter {
 
         return records;
     }
+
+    public List<Entity> format(List<ByteArrayOutputStream> inputFileRecords) {
+        List<Entity> records = new ArrayList<>(inputFileRecords.size());
+        var recordNumber = 0;
+
+        for(var i = 0; i < inputFileRecords.size(); i++) {
+            records.add(recordNumber++, 
+            EntityBuilder.build(inputFileRecords.get(i).toString(), this.recordDescriptor));
+        }
+        return records;
+    }
+
 }
