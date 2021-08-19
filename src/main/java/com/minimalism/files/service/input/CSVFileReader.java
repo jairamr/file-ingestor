@@ -39,12 +39,6 @@ public class CSVFileReader implements IFileReader{
         this.recordsFromFile = new HashMap<>();
         setupOutput();
     }
-    // public CSVFileReader(int workerId, InputFileInformation inputFileInformation, int bufferSize) {
-    //     this.id = workerId;
-    //     this.inputFileInformation = inputFileInformation;
-    //     this.bufferSize = bufferSize;
-    //     this.recordsFromFile = new HashMap<>();
-    // }
     
     /** 
      * <p>
@@ -77,14 +71,15 @@ public class CSVFileReader implements IFileReader{
             //recordsFromFile = processOneCharRecordSeparator(fcInputFile);
         }
         if(recordsFromFile.size() > 0) {
-            //logger.info("Number of records read from file: {}", recordsFromFile.size());
+            logger.info("Number of records read from file: {}", recordsFromFile.size());
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
             records = formatter.format(recordsFromFile);
         }
         if(records != null) {
-            //logger.info("Got records from Formatter: {}", records.size());
             // publish the parsed records.
+            long start = System.currentTimeMillis();
             publishRecords(records);
+            logger.info("For iteration:{}, CSVFileReader took: {} ms", iteration, System.currentTimeMillis() - start);
         }
         return returnValue;
     }
@@ -120,9 +115,9 @@ public class CSVFileReader implements IFileReader{
             fcInputFile.close();
 
             processByteBuffer(thisBatchOffsetInFile, readStatus);
-        } catch (IOException e) {
-            logger.error("An error occurred while reading the file {} at iteration offset: {} and thread offset: {}. The system returned the message: {}", 
-            this.serviceContext.getInputFileInformation().getFilePath(), thisBatchOffsetInFile, thisBuffersOffsetInFile, e.getMessage());
+        } catch (Exception e) {
+            logger.error("An error occurred while reading the file {} during iteration {}, at  offset: {} and thread offset: {}. The system returned the message: {}", 
+            this.serviceContext.getInputFileInformation().getFilePath(), iteration, thisBatchOffsetInFile, thisBuffersOffsetInFile, e.getMessage());
             readStatus.setException(e);
         }
         return readStatus;
@@ -151,7 +146,6 @@ public class CSVFileReader implements IFileReader{
             // records could be split due to slicing...
             recordStart = handlePreamble(readStatus);
         }
-        //var firstRec = true;
         while(this.mbb.remaining() > 0) {
             fromFile = this.mbb.get();
             if(fromFile == '\r') {
@@ -165,10 +159,6 @@ public class CSVFileReader implements IFileReader{
                     mbb.position(recordStart);
                     mbb.get(temp, 0, recordLength);
                     recordBuffer = ByteBuffer.wrap(temp);
-                    // if(firstRec) {
-                    //     logger.info("first rec from mbb: {}", new String(recordBuffer.array()));
-                    //     firstRec = false;
-                    // }
                     this.recordsFromFile.put(recordNumber++, recordBuffer);
                     
                     this.mbb.position(recordStart + recordLength + 2);
@@ -182,11 +172,17 @@ public class CSVFileReader implements IFileReader{
         // fields sizes. Since it is the last record, there are record separators and these NULL
         // characters will remain in the file. WE CANNOT PROCESS NULL STRINGS!
         // So, we better check and drop them!
-        recordEnd = this.mbb.position();
-        for(var x = recordStart; x < recordEnd; x++) {
-            if(this.mbb.get(x) == 0x00) {
-                this.mbb.position(x - 1);
-                recordEnd = this.mbb.position();
+        if(this.mbb.position() == this.mbb.limit()) {
+            recordEnd = this.mbb.position();
+            var nullCount = 0;
+            for(var x = recordStart; x < recordEnd; x++) {
+                if(this.mbb.get(x) == 0x00) {
+                    nullCount++;
+                }
+            }
+            if(nullCount > 1) {
+                // a sequence of null bytes indicates trailing bytes in the buffer at write time...
+                recordEnd -= nullCount;
             }
         }
         recordLength = recordEnd - recordStart;
@@ -194,10 +190,6 @@ public class CSVFileReader implements IFileReader{
         this.mbb.position(recordStart);
         this.mbb.get(temp, 0, recordLength);
         readStatus.setUnprocessedPostamble(temp);
-        
-        // logger.info("Thread name: {}, iteration:{}, Offset in File: {}, Bytes read: {}",
-        //             Thread.currentThread().getName(), 
-        //             iteration, thisBuffersOffsetInFile, bytesRead);
         
         readStatus.setRecordsRead(this.recordsFromFile.size());
         readStatus.setBytesRead(bytesRead);

@@ -9,11 +9,7 @@ import java.util.List;
 import com.minimalism.common.AllEnums.FileTypes;
 import com.minimalism.files.service.input.InputBufferReadStatus;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class ResidualBufferBytesHandler {
-    private static Logger logger = LoggerFactory.getLogger(ResidualBufferBytesHandler.class);
     
     private FileTypes fileType;
     private byte[] recordSeparators;
@@ -39,6 +35,19 @@ public class ResidualBufferBytesHandler {
             return new byte[0];
         }
     }
+
+    public byte[] processResiduals(InputBufferReadStatus iterationResult, byte[] leftOversFromPreviousIteration) throws IOException {
+        if(this.fileType == FileTypes.CSV){
+            return forCSVCRLFFiles(iterationResult, leftOversFromPreviousIteration);
+        } else if(fileType == FileTypes.BIN) {
+            return new byte[0];
+        } else if(fileType == FileTypes.TEXT) {
+            return new byte[0];
+        } else {
+            return new byte[0];
+        }
+    }
+    
     public List<ByteArrayOutputStream> getResidualRecords() {
         return this.residualRecords;
     }
@@ -83,6 +92,35 @@ public class ResidualBufferBytesHandler {
         }
         return leftOversForNextIteration;
     }
+
+    private byte[] forCSVCRLFFiles(InputBufferReadStatus iterationResult, byte[] leftOversFromPreviousIteration) throws IOException {
+        
+        byte[] leftOversForNextIteration = null;
+
+        // handle leftovers from previous iteration (ByteBuffer 0 can have leftovers)
+        // it combines with the preamble bytes frombuffer0 in the current iteration
+        // to make a valid record.
+        if(leftOversFromPreviousIteration != null) {
+            var leftOvers = new ByteArrayOutputStream();
+            leftOvers.write(leftOversFromPreviousIteration);
+            if(iterationResult.getUnprocessedPreamble() != null) {
+                leftOvers.write(iterationResult.getUnprocessedPreamble());
+            }
+            if(leftOvers.size() > 0) {
+                this.residualRecords.add(removeRecordSeparators(leftOvers.toByteArray()));
+            }
+        }
+        
+        // save the postamble bytes to be processed in the next iteration
+        var lastPostAmble = iterationResult.getUnprocessedPostamble();
+        if(lastPostAmble != null) {
+            leftOversForNextIteration = lastPostAmble;
+        } else {
+            leftOversForNextIteration = new byte[0];
+        }
+        return leftOversForNextIteration;
+    }
+
     private ByteArrayOutputStream removeRecordSeparators(byte[] recordData) throws IOException {
         var scrubbedRecord = new ByteArrayOutputStream();
         if(this.recordSeparators[1] != 0x00) {

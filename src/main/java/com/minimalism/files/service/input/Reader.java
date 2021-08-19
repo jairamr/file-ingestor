@@ -127,15 +127,58 @@ public class Reader {
     /** 
      * @param fileType
      * @throws IOException
+     * @throws NoSuchPathException
+     * @throws ServiceAbortedException
      */
-    private void processFile(FileTypes fileType) throws IOException {
-        // if(fileType == FileTypes.CSV) {
-        //     IFileReader reader = new CSVFileReader(0, inputFileInformation, slicerConfguration.getThreadReadBufferSize());
-        //     //InputBufferReadStatus readStatus = reader.read(inputFileInformation, recordDescriptor);
-        //     if(readStatus != null) {
-        //         logger.info("{}", readStatus);
-        //     }
-        // }
+    private void processFile(FileTypes fileType) throws IOException, NoSuchPathException, ServiceAbortedException {
+        int bufferSize = slicerConfguration.getThreadReadBufferSize();
+        int numberOfBuffers = slicerConfguration.getNumberOfThreads();
+        long thisBatchOffsetInFile = 0;
+
+        ExecutorService inputBufferReaderService = null;
+
+        try { 
+            inputBufferReaderService = Executors.newSingleThreadExecutor(); // newFixedThreadPool(numberOfBuffers);
+            Callable<InputBufferReadStatus> worker = null;
+                
+            for(var iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
+                thisBatchOffsetInFile = iteration * (long)bufferSize * numberOfBuffers;
+                if(iteration == 0) {
+                    worker = prepareWorker(fileType, thisBatchOffsetInFile, iteration);
+                } else {
+                    resetWorker(worker, thisBatchOffsetInFile, iteration);
+                }
+                Future<InputBufferReadStatus> iterationResult = inputBufferReaderService.submit(worker);
+                //process the outcome of each iteration
+                // actions are -> 
+                // 1. process residual bytes in each buffer
+                // 2. Split valid Records from invalid records
+                // 3. Stream records to destination (as per configuration)
+                // 4. update update iteration statistics
+                try {
+                    InputBufferReadStatus ibrs = iterationResult.get();
+                    if(iterationResult.isDone()) {
+                        logger.info((ibrs.toString()));
+                        long start = System.currentTimeMillis();
+                        if(iterationResult != null) {
+                            var anyThreadAborted = iterationResult.get().hasError();
+                            if(!anyThreadAborted) {
+                                handleResidualBytesInBuffer(ibrs);
+                            } else {
+                                // if thread has aborted, many records are lost! Abort this batch!
+                                throw new ServiceAbortedException("One or more threads aborted with an exception.");
+                            }
+                        }
+                        logger.info("Residual bytes handler took {} ms", System.currentTimeMillis() - start);
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    Thread.currentThread().interrupt();
+                } 
+            }
+        } finally {
+            if(inputBufferReaderService != null)
+                shutdownAndAwaitTermination(inputBufferReaderService);
+        }
     }
 
     /** 
@@ -173,9 +216,10 @@ public class Reader {
                 List<InputBufferReadStatus> resultsFromWorkers = new ArrayList<>();
                 iterationResults.stream().forEach(i -> {
                     try {
-                        //logger.info((i.get().toString()));
                         if(i.isDone()) {
-                            resultsFromWorkers.add(i.get());
+                            InputBufferReadStatus ibrs = i.get();
+                            logger.info((ibrs.toString()));
+                            resultsFromWorkers.add(ibrs);
                         }
                     } catch (InterruptedException | ExecutionException e) {
                         Thread.currentThread().interrupt();
@@ -184,15 +228,19 @@ public class Reader {
                 
                 // only when all threads have completed processing, we should be processing the 
                 // residual bytes from the buffers
+                long start = System.currentTimeMillis();
                 if(resultsFromWorkers.size() == workers.size()) {
                     var anyThreadAborted = resultsFromWorkers.stream().anyMatch(InputBufferReadStatus::hasError);
                     if(!anyThreadAborted) {
                         handleResidualBytesInBuffers(resultsFromWorkers);
                     } else {
                         // if thread has aborted, many records are lost! Abort this batch!
-                        throw new ServiceAbortedException("One ormore threads aborted with an exception.");
+                        throw new ServiceAbortedException("One or more threads aborted with an exception.");
                     }
+                } else {
+                    //something seriously wrong!
                 }
+                logger.info("Residual bytes handler took {} ms", System.currentTimeMillis() - start);
             }
         } finally {
             if(inputBufferReaderService != null)
@@ -212,12 +260,37 @@ public class Reader {
         List<ByteArrayOutputStream> residualRecords = residualsHandler.getResidualRecords();
     
         // format and publish residual records
-        var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
-        List<Entity> records = formatter.format(residualRecords);
-        if(records != null) {
-            logger.info("Got residual records from Formatter: {}", records.size());
-            // publish the parsed records.
-            publishRecords(records); 
+        if(!residualRecords.isEmpty()) {
+            var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
+            List<Entity> records = formatter.format(residualRecords);
+            if(records != null) {
+                logger.info("Got residual records from Formatter: {}", records.size());
+                // publish the parsed records.
+                publishRecords(records); 
+            }
+        }
+    }
+
+    private void handleResidualBytesInBuffer(InputBufferReadStatus resultsFromWorker) throws IOException {
+        var residualsHandler = new ResidualBufferBytesHandler
+        (this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
+            this.serviceContext.getInputFileInformation().getFileType());
+
+        this.leftOversFromPreviousIteration = 
+            residualsHandler.processResiduals
+            (resultsFromWorker, this.leftOversFromPreviousIteration);
+    
+        List<ByteArrayOutputStream> residualRecords = residualsHandler.getResidualRecords();
+    
+        // format and publish residual records
+        if(!residualRecords.isEmpty()) {
+            var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
+            List<Entity> records = formatter.format(residualRecords);
+            if(records != null) {
+                logger.info("Got residual records from Formatter: {}", records.size());
+                // publish the parsed records.
+                publishRecords(records); 
+            }
         }
     }
 
@@ -265,6 +338,20 @@ public class Reader {
         }
         return returnValue;
     }
+
+    private Callable<InputBufferReadStatus> prepareWorker(FileTypes fileType, long thisBatchOffsetInFile, int iteration) throws NoSuchPathException {
+        Callable<InputBufferReadStatus> returnValue = null;
+
+        int bufferSize = slicerConfguration.getThreadReadBufferSize();
+        int numberOfBuffers = slicerConfguration.getNumberOfThreads();
+
+        if(fileType == FileTypes.CSV) {
+            IFileReader reader = new CSVFileReader(0, this.serviceContext, bufferSize);
+            var worker = new Worker(thisBatchOffsetInFile, iteration, reader, numberOfBuffers);
+            returnValue = worker;
+        }
+        return returnValue;
+    }
     
     /** 
      * @param workers
@@ -273,6 +360,10 @@ public class Reader {
      */
     private void resetWorkers(List<Callable<InputBufferReadStatus>> workers, long offsetInFile, int iteration) {
         workers.stream().forEach(w -> ((Worker)w).reset(offsetInFile, iteration));
+    }
+
+    private void resetWorker(Callable<InputBufferReadStatus> worker, long offsetInFile, int iteration) {
+        ((Worker)worker).reset(offsetInFile, iteration);
     }
 
     private void publishRecords(List<Entity> records) {
@@ -285,6 +376,8 @@ public class Reader {
             }
         }
     }
+
+    
 
     private void setupOutput() throws NoSuchPathException{
         try {

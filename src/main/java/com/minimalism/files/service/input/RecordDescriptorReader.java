@@ -72,7 +72,10 @@ public class RecordDescriptorReader {
     public static RecordDescriptor readDefinition(String clientName, String fileName, String recordName) throws RecordDescriptorException {
         RecordDescriptor recordDescriptor = null;
         String descriptorFileName = null;
-        
+        if(recordName.contains(".")) {
+            var indexOfDot = recordName.indexOf(".");
+            recordName = recordName.substring(0, indexOfDot);
+        }
         try {
             var sanitizedFileName = sanitizeFileName(fileName);
             var inputRecordDescriptionPath = FileSystemConfigHelper.getInstance().getServiceInputDataDefinitionDirectory(clientName);
