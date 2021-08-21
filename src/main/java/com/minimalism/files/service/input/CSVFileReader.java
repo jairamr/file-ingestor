@@ -274,7 +274,7 @@ public class CSVFileReader implements IFileReader{
 
     private void publishRecords(List<Entity> records) {
         if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
-            var kafkaPublisher = new Publisher(this.brokerConfiguration);
+            var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
                 kafkaPublisher.publish(records);
             } catch (InterruptedException e) {

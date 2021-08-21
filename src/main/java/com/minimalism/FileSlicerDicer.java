@@ -1,8 +1,6 @@
 package com.minimalism;
 
-import java.io.Console;
 import java.io.IOException;
-import java.util.Scanner;
 
 import com.minimalism.files.domain.input.ServiceContext;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
@@ -58,7 +56,7 @@ public class FileSlicerDicer
                 reader = new Reader(context, headersPresent);
             } else if(args.length == 4) {
                 context = new ServiceContext(clientName, inputFileName, recordDescriptorFileName);
-                reader = new Reader(context, (headersPresent));
+                reader = new Reader(context, headersPresent);
             }
             
             long byteCount = reader.read();

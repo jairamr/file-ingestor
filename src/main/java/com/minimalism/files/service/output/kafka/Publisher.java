@@ -2,10 +2,10 @@ package com.minimalism.files.service.output.kafka;
 
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 import com.minimalism.files.domain.entities.Entity;
 import com.minimalism.files.domain.entities.Field;
+import com.minimalism.files.domain.input.ServiceContext;
 import com.minimalism.files.service.output.IPublish;
 
 import org.apache.avro.Schema;
@@ -16,6 +16,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +26,9 @@ public class Publisher implements IPublish{
     private Schema avroSchema;
     private BrokerConfiguration configuration;
     
-    public Publisher(BrokerConfiguration configuration) {
+    public Publisher(BrokerConfiguration configuration, ServiceContext serviceContext) {
         this.configuration = configuration;
+        this.avroSchema = serviceContext.getAvroSchema();
     }
     public void publish(List<Entity> records) throws InterruptedException {
         var props = new Properties();
@@ -37,7 +39,7 @@ public class Publisher implements IPublish{
         props.put("batch.size", 28000);
         props.put("auto.register.schemas", true);
         props.put("schema.registry.url", "something.or.other");
-        props.put("key.serializer",   "com.minimalism.files.service.output.kafka.seralizers.CustomAvroSerializer");
+        props.put("key.serializer",   "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer",   "com.minimalism.files.service.output.kafka.seralizers.CustomAvroSerializer");
         if(this.avroSchema == null) {
             Entity forSchema = records.get(0);
@@ -74,7 +76,7 @@ public class Publisher implements IPublish{
         }
         return avroGenericRecord;
     }
-    
+
     private class PublisherCallback implements Callback 
     {         
         @Override    

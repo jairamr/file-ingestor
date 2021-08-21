@@ -1,4 +1,4 @@
-package com.minimalism.common;
+package com.minimalism;
 
 import java.io.FileReader;
 import java.io.IOException;

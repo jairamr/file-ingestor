@@ -57,10 +57,7 @@ public class Reader {
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
         var slicer = new Slicer(this.serviceContext.getInputFileInformation());
         this.slicerConfguration = slicer.sliceFile();
-        // this.residualsHandler = 
-        // new ResidualBufferBytesHandler(this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
-        //this.serviceContext.getInputFileInformation().getFileType());
-
+        
         setupOutput();
     }
 
@@ -74,10 +71,6 @@ public class Reader {
         var slicer = new Slicer(this.serviceContext.getInputFileInformation());
         this.slicerConfguration = slicer.sliceFile();
 
-        // this.residualsHandler = 
-        // new ResidualBufferBytesHandler(this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
-        //this.serviceContext.getInputFileInformation().getFileType());
-        
         setupOutput();
     }
 
@@ -368,7 +361,7 @@ public class Reader {
 
     private void publishRecords(List<Entity> records) {
         if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
-            var kafkaPublisher = new Publisher(this.brokerConfiguration);
+            var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
                 kafkaPublisher.publish(records);
             } catch (InterruptedException e) {

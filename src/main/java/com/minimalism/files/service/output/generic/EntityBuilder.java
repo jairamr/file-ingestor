@@ -35,6 +35,18 @@ public class EntityBuilder {
         return domainEntity;
     }
 
+    public static Entity build(RecordDescriptor recordDescriptor) {
+        var domainEntity = new Entity(recordDescriptor.getEntityClassName(),
+        recordDescriptor.getTargetDomainClassName(), recordDescriptor.getFieldDescriptors().size());
+        
+        List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
+        for(var i = 0; i < fieldDescriptions.size(); i++ ) {
+            domainEntity.addField(buildField(fieldDescriptions.get(i)));
+        }
+        
+        return domainEntity;
+    }
+
     public static Employee buildDomainObject(String inputRecord, RecordDescriptor recordDescriptor) {
         return new Employee(recordDescriptor.getFieldSeparatorAsString(), inputRecord);
     }

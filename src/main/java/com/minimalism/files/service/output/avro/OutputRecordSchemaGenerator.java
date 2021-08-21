@@ -1,11 +1,18 @@
 package com.minimalism.files.service.output.avro;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardOpenOption;
+
 import javax.json.JsonObject;
 
-import com.minimalism.files.domain.input.FieldDescriptor;
+import com.minimalism.common.AllEnums.Directories;
+import com.minimalism.files.domain.InputOutputFileSystem;
+import com.minimalism.files.domain.entities.Entity;
 import com.minimalism.files.domain.input.RecordDescriptor;
+import com.minimalism.files.exceptions.NoSuchPathException;
+import com.minimalism.files.service.output.generic.EntityBuilder;
 
 public class OutputRecordSchemaGenerator {
 
@@ -14,26 +21,44 @@ public class OutputRecordSchemaGenerator {
      * @param inputRecordDescriptor
      * @param recordName
      * @return JsonObject
+     * @throws NoSuchPathException
+     * @throws IOException
      */
-    public static JsonObject createAvroSchema(String clientName, RecordDescriptor inputRecordDescriptor, String recordName) {
+    public static JsonObject createAvroSchema(String clientName, RecordDescriptor inputRecordDescriptor, String recordName) throws IOException, NoSuchPathException {
         
-        if(recordName.contains(" ")) {
-            recordName = recordName.replace(" ", "_");
+        // create an Entity object basedon the record description
+        Entity sampleEntity = EntityBuilder.build(inputRecordDescriptor);
+        JsonObject avroSchema = sampleEntity.forAvroSchema();
+
+        var dataDefinitionPath = InputOutputFileSystem.getPathFor(clientName, Directories.OUTPUT_DATA_DEFINITION);
+        if(!Files.exists(dataDefinitionPath, LinkOption.NOFOLLOW_LINKS)) {
+            Files.createDirectory(dataDefinitionPath);
         }
-        if(recordName.contains("-")) {
-            recordName = recordName.replace("-","_");
-        }
-        String namespace = clientName.concat(".").concat(recordName).concat(".avro");
+        Files.write(dataDefinitionPath.resolve(recordName.concat(".json")), 
+            avroSchema.toString().getBytes(), StandardOpenOption.CREATE);
         
-        JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder();
-        for(FieldDescriptor fd : inputRecordDescriptor.getFieldDescriptors()) {
-            fieldsBuilder.add(fd.asJson());
-        }
-        return Json.createObjectBuilder()
-        .add("namespace", namespace)
-        .add("type", "record")
-        .add("name", recordName)
-        .add("fields", fieldsBuilder)
-        .build();
+        return avroSchema; 
+
+        // save the generate schema for sharing with consumers (if necessary)
+        // migrate to Schema Registry later...
+        
+        // if(recordName.contains(" ")) {
+        //     recordName = recordName.replace(" ", "_");
+        // }
+        // if(recordName.contains("-")) {
+        //     recordName = recordName.replace("-","_");
+        // }
+        // String namespace = clientName.concat(".").concat(recordName).concat(".avro");
+        
+        // JsonArrayBuilder fieldsBuilder = Json.createArrayBuilder();
+        // for(FieldDescriptor fd : inputRecordDescriptor.getFieldDescriptors()) {
+        //     fieldsBuilder.add(fd.asJson());
+        // }
+        // return Json.createObjectBuilder()
+        // .add("namespace", namespace)
+        // .add("type", "record")
+        // .add("name", recordName)
+        // .add("fields", fieldsBuilder)
+        // .build();
     }
 }

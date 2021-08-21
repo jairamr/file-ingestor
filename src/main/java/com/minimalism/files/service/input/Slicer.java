@@ -2,7 +2,7 @@ package com.minimalism.files.service.input;
 
 import java.io.IOException;
 
-import com.minimalism.common.AppConfigHelper;
+import com.minimalism.AppConfigHelper;
 import com.minimalism.files.domain.SystemRecources;
 import com.minimalism.files.domain.input.InputFileInformation;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;

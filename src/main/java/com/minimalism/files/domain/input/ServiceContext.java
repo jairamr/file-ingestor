@@ -6,15 +6,20 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
 
+import javax.json.JsonObject;
+
+import com.minimalism.AppConfigHelper;
 import com.minimalism.common.AllEnums.FileTypes;
 import com.minimalism.common.AllEnums.OutputDestinations;
-import com.minimalism.common.AppConfigHelper;
 import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
 import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.service.input.RecordDescriptorReader;
+import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
+
+import org.apache.avro.Schema;
 
 public class ServiceContext {
     private String clientName;
@@ -24,6 +29,7 @@ public class ServiceContext {
     String operatingMode;
     private OutputDestinations destinationType;
     private OutputDestinations failoverDestinationType;
+    private Schema avroSchema;
     
     public ServiceContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
         this.clientName = clientName;
@@ -32,6 +38,8 @@ public class ServiceContext {
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
         this.recordName = this.recordDescriptor.getRecordName();
         buildOutputDestinations();
+        JsonObject avroSchemaJson = OutputRecordSchemaGenerator.createAvroSchema(clientName, this.recordDescriptor, this.recordName);
+        this.avroSchema = new Schema.Parser().parse(avroSchemaJson.toString());
     }
 
     public ServiceContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
@@ -65,6 +73,10 @@ public class ServiceContext {
 
     public OutputDestinations getFailoverDestinationType() {
         return this.failoverDestinationType;
+    }
+
+    public Schema getAvroSchema() {
+        return this.avroSchema;
     }
 
     private void buildInputFileInformation(String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException {

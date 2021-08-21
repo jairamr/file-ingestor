@@ -6,7 +6,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.minimalism.common.AppConfigHelper;
+import com.minimalism.AppConfigHelper;
 import com.minimalism.common.AllEnums.Directories;
 import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.exceptions.NoSuchPathException;
@@ -113,10 +113,10 @@ public class InputOutputFileSystem {
         Path root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());
         if(!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
             throw new NoSuchPathException(
-                String.format("The service root directory does not exist in the file system. Please use InputOutputFileSystem#createFileSystem() to create the directories.", root.toString()));
+                String.format("The service root directory: %s, does not exist in the file system. Please use InputOutputFileSystem#createFileSystem() to create the directories.", root.toString()));
         }
         // check if client path is created
-        Path clientPath = root.resolve(clientName.replaceAll(" ", "_"));
+        Path clientPath = root.resolve(clientName.replace(" ", "_"));
         if(!Files.exists(clientPath)) {
             throw new NoSuchPathException(
                 String.format("The directory for client: %s does not exist in the file system. Please use InputOutputFileSystem#createFileSystem() to create the directories.", clientPath.toString()));
@@ -138,10 +138,10 @@ public class InputOutputFileSystem {
         Path root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());
         if(!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
             throw new NoSuchPathException(
-                String.format("The service root directory does not exist in the file system. Please use InputOutputFileSystem#createFileSystem() to create the directories.", root.toString()));
+                String.format("The service root directory: %s, does not exist in the file system. Please use InputOutputFileSystem#createFileSystem() to create the directories.", root.toString()));
         }
         // check if client path is created
-        Path clientPath = root.resolve(clientName.replaceAll(" ", "_"));
+        Path clientPath = root.resolve(clientName.replace(" ", "_"));
         if(!Files.exists(clientPath)) {
             throw new NoSuchPathException(
                 String.format("The directory for client: %s does not exist in the file system. Please use InputOutputFileSystem#createFileSystem() to create the directories.", clientPath.toString()));

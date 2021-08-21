@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.minimalism.common.AppConfigHelper;
+import com.minimalism.AppConfigHelper;
 import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.domain.InputOutputFileSystem;
 import com.minimalism.files.exceptions.NoSuchPathException;

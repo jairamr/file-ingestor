@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
+import com.minimalism.AppConfigHelper;
+
 import org.junit.jupiter.api.Test;
 
 public class AppConfigHelperTests {

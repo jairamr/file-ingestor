@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-import com.minimalism.common.AppConfigHelper;
+import com.minimalism.AppConfigHelper;
 import com.minimalism.files.exceptions.NoSuchPathException;
 
 public class FileSystemConfigHelper {
