@@ -7,6 +7,10 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * @author R Jairam Iyer
  * The <em>Entity</em> class represents a domain entity. It is a generic representation of the instances
@@ -24,12 +28,12 @@ import javax.json.JsonObject;
  * <li>Nullable - values is not null if specified as not-nullable
  * </ol>
  */
-public class Entity implements IValidation {
+public class InputEntity implements IValidation {
     private String name;
     private String targetDomainClassName;
-    List<Field> fields;
+    List<InputField> fields;
 
-    public Entity(String name, String domainClassName, int fieldCount) {
+    public InputEntity(String name, String domainClassName, int fieldCount) {
         this.name = name;
         this.targetDomainClassName = domainClassName;
         fields = new ArrayList<>(fieldCount);
@@ -72,7 +76,7 @@ public class Entity implements IValidation {
      * Returns a <em>List</em> of attributes of the domain entity as specified in the Record Descriptor.
      * @return List<Field>
      */
-    public List<Field> getFields() {
+    public List<InputField> getFields() {
         return fields;
     }
     
@@ -80,7 +84,7 @@ public class Entity implements IValidation {
      * Sets the attributes of the domain entity as specified in the Record Descriptor.
      * @param fields
      */
-    public void setFields(List<Field> fields) {
+    public void setFields(List<InputField> fields) {
         this.fields = fields;
     }
     
@@ -89,7 +93,7 @@ public class Entity implements IValidation {
      * position of the field in the input record.
      * @param field - instance of <em>Field</em> class that is instantoated by the <em>InputRecordFormatter</em>.
      */
-    public void addField(Field field) {
+    public void addField(InputField field) {
         this.fields.add(field.getPosition(), field);
     }
     
@@ -98,7 +102,7 @@ public class Entity implements IValidation {
      * @param position
      * @return Field
      */
-    public Field getField(short position) {
+    public InputField getField(short position) {
         return this.fields.get(position);
     }
     
@@ -107,13 +111,13 @@ public class Entity implements IValidation {
      * @param fieldName
      * @return Field
      */
-    public Field getField(String fieldName) {
+    public InputField getField(String fieldName) {
         return this.fields.stream().filter(f -> f.getName().equals(fieldName)).findFirst().orElse(null);
     }
 
     public JsonObject forAvroSchema() {
         JsonArrayBuilder fieldsArrayItemsBuilder = Json.createArrayBuilder();
-        for(Field f : this.fields) {
+        for(InputField f : this.fields) {
             fieldsArrayItemsBuilder.add(f.forAvroSchema());
         }
 
@@ -125,6 +129,16 @@ public class Entity implements IValidation {
         .build();
     }
 
+    public String asJson() {
+        String returnValue = null;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            returnValue = mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return returnValue;
+    }
     /** 
      * 
      * @param propertyName
@@ -148,9 +162,10 @@ public class Entity implements IValidation {
      * @return boolean
      */
     @Override
+    @JsonIgnore
     public boolean isValid() {
         return this.fields.stream()
-                            .filter(Field::isValid)
+                            .filter(InputField::isValid)
                             .collect(Collectors.counting()) == this.fields.size();
     }
     
@@ -158,7 +173,7 @@ public class Entity implements IValidation {
      * @return List<Field>
      */
     @Override
-    public List<Field> invalids() {
+    public List<InputField> invalids() {
         return this.fields.stream()
                             .filter(f -> !f.isValid())
                             .collect(Collectors.toList());

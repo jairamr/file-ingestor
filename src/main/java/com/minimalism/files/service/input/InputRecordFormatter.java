@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.minimalism.files.domain.entities.Entity;
+import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.service.output.generic.EntityBuilder;
 
@@ -25,9 +25,9 @@ public class InputRecordFormatter {
      * @param recordDescriptor
      * @return Map<Integer, List<String>>
      */
-    public List<Entity> format(Map<Integer, ByteBuffer> inputFileRecords) {
+    public List<InputEntity> format(Map<Integer, ByteBuffer> inputFileRecords) {
         long startTime = System.currentTimeMillis();
-        List<Entity> records = new ArrayList<>();
+        List<InputEntity> records = new ArrayList<>();
         
         var recordNumber = 0;
 
@@ -46,8 +46,8 @@ public class InputRecordFormatter {
         return records;
     }
 
-    public List<Entity> format(List<ByteArrayOutputStream> inputFileRecords) {
-        List<Entity> records = new ArrayList<>(inputFileRecords.size());
+    public List<InputEntity> format(List<ByteArrayOutputStream> inputFileRecords) {
+        List<InputEntity> records = new ArrayList<>(inputFileRecords.size());
         var recordNumber = 0;
 
         for(var i = 0; i < inputFileRecords.size(); i++) {

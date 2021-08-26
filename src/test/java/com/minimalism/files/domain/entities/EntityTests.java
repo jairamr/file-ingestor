@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 public class EntityTests {
     @Test
     void testForAvroSchema() {
-        Entity iut = new Entity("Employee", "com.minimalism.domain.Employee", 3);
-        Field empId = new Field();
+        InputEntity iut = new InputEntity("Employee", "com.minimalism.domain.Employee", 3);
+        InputField empId = new InputField();
         empId.setName("EmpId");
         empId.setType("String");
         empId.setMaximumLength((short)10);
@@ -18,7 +18,7 @@ public class EntityTests {
         empId.setValue("20362");
         iut.addField(empId);
 
-        Field namePrefix = new Field();
+        InputField namePrefix = new InputField();
         namePrefix.setName("namePrefix");
         namePrefix.setType("String");
         namePrefix.setMaximumLength((short)5);
@@ -28,7 +28,7 @@ public class EntityTests {
         namePrefix.setValue("Mr.");
         iut.addField(namePrefix);
 
-        Field firstName = new Field();
+        InputField firstName = new InputField();
         firstName.setName("firstName");
         firstName.setType("String");
         firstName.setMaximumLength((short)10);

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.minimalism.common.AllEnums.OutputDestinations;
-import com.minimalism.files.domain.entities.Entity;
+import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.input.ServiceContext;
 import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.service.output.kafka.BrokerConfiguration;
@@ -62,7 +62,7 @@ public class CSVFileReader implements IFileReader{
     public InputBufferReadStatus read(long thisBatchOffsetInFile, int iteration, int numberOfThreads) {
         
         InputBufferReadStatus returnValue = null;
-        List<Entity> records = null;
+        List<InputEntity> records = null;
         byte[] recordSeparators = this.serviceContext.getRecordDescriptor().getRecordSeparator();
     
         if(recordSeparators[1] != 0x00) {
@@ -108,7 +108,8 @@ public class CSVFileReader implements IFileReader{
         var readStatus = new InputBufferReadStatus(currentThread.getId(),
                         currentThread.getName(), numberOfThreads, iteration, thisBatchOffsetInFile, 
                         thisBuffersOffsetInFile, this.bufferSize);
-        
+        readStatus.setIterationStartTime(System.currentTimeMillis());
+
         try(var inputFile = new RandomAccessFile(this.serviceContext.getInputFileInformation().getFilePath().toString(), "rw")) {
             FileChannel fcInputFile = inputFile.getChannel(); 
             this.mbb = fcInputFile.map(MapMode.READ_WRITE, thisBuffersOffsetInFile, this.bufferSize);
@@ -120,6 +121,8 @@ public class CSVFileReader implements IFileReader{
             this.serviceContext.getInputFileInformation().getFilePath(), iteration, thisBatchOffsetInFile, thisBuffersOffsetInFile, e.getMessage());
             readStatus.setException(e);
         }
+        readStatus.setIterationEndTime(System.currentTimeMillis());
+        
         return readStatus;
     }
     
@@ -272,11 +275,12 @@ public class CSVFileReader implements IFileReader{
         }
     }
 
-    private void publishRecords(List<Entity> records) {
+    private void publishRecords(List<InputEntity> records) {
         if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
-                kafkaPublisher.publish(records);
+                //kafkaPublisher.publish(records, true);
+                kafkaPublisher.publishGenericRecord(records);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

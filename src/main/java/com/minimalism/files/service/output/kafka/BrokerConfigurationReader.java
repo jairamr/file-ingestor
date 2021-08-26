@@ -31,11 +31,51 @@ public class BrokerConfigurationReader {
         return Integer.parseInt(this.kafkaProperties.getProperty(this.recordTypeName.toLowerCase().concat("_topic_partitions").toLowerCase()));
     }
 
+    public long getPublisherBufferMemorySize() {
+        return Long.parseLong(this.kafkaProperties.getProperty("publisher.buffer.memory"));
+    }
+
+    public int getPublisherRetriesCount() {
+        return Integer.parseInt(this.kafkaProperties.getProperty("publisher.retries"));
+    }
+
+    public int getPublisherLingerMilliseconds() {
+        return Integer.parseInt(this.kafkaProperties.getProperty("publisher.linger.milliseconds"));
+    }
+
+    public int getPublisherBatchSize() {
+        return Integer.parseInt(this.kafkaProperties.getProperty("publisher.batch.size"));
+    }
+
+    public boolean autoRegisterSchemas() {
+        return Boolean.parseBoolean(this.kafkaProperties.getProperty("auto.register.schemas"));
+    }
+
+    public String getSchemaRegistryUrl() {
+        return this.kafkaProperties.getProperty("schema.registry.url");
+    }
+
+    public String getKeySerializerName() {
+        return this.kafkaProperties.getProperty("key.serializer");
+    }
+
+    public String getValueSerializerName() {
+        return this.kafkaProperties.getProperty("value.serializer");
+    }
+
     public BrokerConfiguration getBrokerConfiguration() {
         var returnValue = new BrokerConfiguration();
         returnValue.setBootstrapServers(this.getBootsatrapServers());
         returnValue.setTopic(this.getTopic());
         returnValue.setPartitions(this.getPartitionsCount());
+        returnValue.setAutoRegisterSchemas(this.autoRegisterSchemas());
+        returnValue.setPublisherBatchSize(this.getPublisherBatchSize());
+        returnValue.setPublisherBufferMemory(this.getPublisherBufferMemorySize());
+        returnValue.setPublisherKeySerializer(this.getKeySerializerName());
+        returnValue.setPublisherLingerMilliseconds(this.getPublisherLingerMilliseconds());
+        returnValue.setPublisherRetries(this.getPublisherRetriesCount());
+        returnValue.setPublisherValueSerializer(this.getValueSerializerName());
+        returnValue.setSchemaRegistryUrl(this.getSchemaRegistryUrl());
 
         return returnValue;
     }

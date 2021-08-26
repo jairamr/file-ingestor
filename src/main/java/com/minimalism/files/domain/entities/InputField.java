@@ -6,9 +6,12 @@ import java.util.Objects;
 import javax.json.Json;
 import javax.json.JsonObject;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.minimalism.common.AllEnums.DataTypes;
 
-public class Field {
+public class InputField {
     private static short TYPE_BIT = 3;
     private static short MIN_LENGTH_BIT = 2;
     private static short MAX_LENGTH_BIT = 1;
@@ -23,7 +26,6 @@ public class Field {
     private Object value;
     private BitSet flags = new BitSet(4);
 
-    
     /** 
      * @return String
      */
@@ -195,9 +197,22 @@ public class Field {
         .add("type", avroRulesTypeName)
         .build();
     }
+
+    public String asJson() {
+        String returnValue = null;
+        JsonMapper mapper = new JsonMapper();
+        try {
+            returnValue = mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return returnValue;
+    }
+
     /** 
      * @return boolean
      */
+    @JsonIgnore
     public boolean isValid() {
         if(this.nullable)
             return flags.cardinality() == 3 || flags.cardinality() == 4;
@@ -220,7 +235,7 @@ public class Field {
      */
     @Override
     public boolean equals(Object other) {
-        if(!(other instanceof Field)) {
+        if(!(other instanceof InputField)) {
             return false;
         }
         return other.hashCode() == this.hashCode();

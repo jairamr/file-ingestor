@@ -9,7 +9,7 @@ import javax.json.JsonObject;
 
 import com.minimalism.common.AllEnums.Directories;
 import com.minimalism.files.domain.InputOutputFileSystem;
-import com.minimalism.files.domain.entities.Entity;
+import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.service.output.generic.EntityBuilder;
@@ -27,7 +27,7 @@ public class OutputRecordSchemaGenerator {
     public static JsonObject createAvroSchema(String clientName, RecordDescriptor inputRecordDescriptor, String recordName) throws IOException, NoSuchPathException {
         
         // create an Entity object basedon the record description
-        Entity sampleEntity = EntityBuilder.build(inputRecordDescriptor);
+        InputEntity sampleEntity = EntityBuilder.build(inputRecordDescriptor);
         JsonObject avroSchema = sampleEntity.forAvroSchema();
 
         var dataDefinitionPath = InputOutputFileSystem.getPathFor(clientName, Directories.OUTPUT_DATA_DEFINITION);

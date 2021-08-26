@@ -58,17 +58,24 @@ public class FileSlicerDicer
                 context = new ServiceContext(clientName, inputFileName, recordDescriptorFileName);
                 reader = new Reader(context, headersPresent);
             }
+
+            long byteCount = 0;
             
-            long byteCount = reader.read();
+            if(reader != null) {
+                byteCount = reader.read();
+            } else {
+                System.console().printf("Unable to create an instance of com.minimalism.FileSlicerDicer");
+                System.exit(1);
+            }
             double duration = (double)(System.currentTimeMillis() - startTime);
             logger.info("Read {} bytes in {} seconds", byteCount, duration/1000);
         } catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException | RecordDescriptorException | ServiceAbortedException e) {
             Thread.currentThread().interrupt();
-            e.printStackTrace();
             logger.error("Service terminated with error due to: {}", e.getMessage());
             if(logger.isDebugEnabled()) {
                 logger.debug("Service terminated with error due to: {} and a stack trace of {}", e.getMessage(), e.getStackTrace());
             }
-        } 
+            System.exit(1);
+        }
     }
 }

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 public class FieldTests {
     @Test
     void testEquals_for_same_instance() {
-        Field iut = new Field();
+        InputField iut = new InputField();
         iut.setName("EmpId");
         iut.setType("String");
         iut.setMaximumLength((short)10);
@@ -24,12 +24,12 @@ public class FieldTests {
         iut.setNullable(false);
         iut.setPosition((short)0);
         iut.setValue("20362");
-        Field other = iut;
+        InputField other = iut;
         assertTrue(iut.equals(other));
     }
     @Test
     void testEquals_fails_for_same_other_instance() {
-        Field iut = new Field();
+        InputField iut = new InputField();
         iut.setName("EmpId");
         iut.setType("String");
         iut.setMaximumLength((short)10);
@@ -42,7 +42,7 @@ public class FieldTests {
     }
     @Test
     void testEquals_for_same_values() {
-        Field iut1 = new Field();
+        InputField iut1 = new InputField();
         iut1.setName("EmpId");
         iut1.setType("String");
         iut1.setMaximumLength((short)10);
@@ -51,7 +51,7 @@ public class FieldTests {
         iut1.setPosition((short)0);
         iut1.setValue("20362");
 
-        Field iut2 = new Field();
+        InputField iut2 = new InputField();
         iut2.setName("EmpId");
         iut2.setType("String");
         iut2.setMaximumLength((short)10);
@@ -65,7 +65,7 @@ public class FieldTests {
 
     @Test
     void testForAvroSchema() {
-        Field iut1 = new Field();
+        InputField iut1 = new InputField();
         iut1.setName("EmpId");
         iut1.setType("String");
         iut1.setMaximumLength((short)10);

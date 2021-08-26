@@ -3,8 +3,8 @@ package com.minimalism.files.service.output.generic;
 import java.util.List;
 
 import com.minimalism.files.domain.entities.Employee;
-import com.minimalism.files.domain.entities.Entity;
-import com.minimalism.files.domain.entities.Field;
+import com.minimalism.files.domain.entities.InputEntity;
+import com.minimalism.files.domain.entities.InputField;
 import com.minimalism.files.domain.input.FieldDescriptor;
 import com.minimalism.files.domain.input.RecordDescriptor;
 /**
@@ -19,8 +19,8 @@ public class EntityBuilder {
      * @param recordDescriptor
      * @return Entity
      */
-    public static Entity build(String inputRecord, RecordDescriptor recordDescriptor) {
-        var domainEntity = new Entity(recordDescriptor.getEntityClassName(),
+    public static InputEntity build(String inputRecord, RecordDescriptor recordDescriptor) {
+        var domainEntity = new InputEntity(recordDescriptor.getEntityClassName(),
         recordDescriptor.getTargetDomainClassName(), recordDescriptor.getFieldDescriptors().size());
         
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
@@ -35,8 +35,8 @@ public class EntityBuilder {
         return domainEntity;
     }
 
-    public static Entity build(RecordDescriptor recordDescriptor) {
-        var domainEntity = new Entity(recordDescriptor.getEntityClassName(),
+    public static InputEntity build(RecordDescriptor recordDescriptor) {
+        var domainEntity = new InputEntity(recordDescriptor.getEntityClassName(),
         recordDescriptor.getTargetDomainClassName(), recordDescriptor.getFieldDescriptors().size());
         
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
@@ -55,8 +55,8 @@ public class EntityBuilder {
      * @param fieldDescriptor
      * @return Field
      */
-    private static Field buildField(FieldDescriptor fieldDescriptor) {
-        var field = new Field();
+    private static InputField buildField(FieldDescriptor fieldDescriptor) {
+        var field = new InputField();
         field.setName(fieldDescriptor.getFieldName());
         field.setPosition(fieldDescriptor.getPosition());
         field.setType(fieldDescriptor.getDatatype().getTypeName());

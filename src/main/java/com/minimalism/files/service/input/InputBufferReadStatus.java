@@ -11,6 +11,8 @@ public class InputBufferReadStatus {
     private int bytesRead;
     private int recordsRead;
     private int iteration;
+    private long iterationStartTime;
+    private long iterationEndTime;
     private byte[] unprocessedPreamble;
     private byte[] unprocessedPostamble;
     boolean error;
@@ -209,7 +211,26 @@ public class InputBufferReadStatus {
         this.e = e;
         this.error = true;
     }
+
+    public long getIterationStartTime() {
+        return this.iterationStartTime;
+    }
+
+    public void setIterationStartTime(long startTime) {
+        this.iterationStartTime = startTime;
+    }
+
+    public long getIterationEndTime() {
+        return this.iterationEndTime;
+    }
+
+    public void setIterationEndTime(long endTime) {
+        this.iterationEndTime = endTime;
+    }
     
+    public long getIterationTime() {
+        return this.iterationEndTime - this.iterationStartTime;
+    }
     /** 
      * @return String
      */
@@ -227,8 +248,8 @@ public class InputBufferReadStatus {
 
         if(!this.error) {
             returnValue = String.format("Thread with name: %s, processed buffer number: %d, completed processing of " +
-            "iteration: %d and processed: %d bytes into %d records. The byte buffer had an unprocessed preamble of: %d bytes " +
-            "and an unprocessed postamble of: %d bytes", threadName, bufferNumber, iteration, bytesRead, recordsRead, preBytes, postBytes);
+            "iteration: %d and processed: %d bytes into %d records, in %d ms. The byte buffer had an unprocessed preamble of: %d bytes " +
+            "and an unprocessed postamble of: %d bytes", threadName, bufferNumber, iteration, bytesRead, recordsRead, this.getIterationTime(), preBytes, postBytes);
         } else {
             returnValue = String.format("Thread with id: %d aborted with an error. The exception: %s occurred " + 
             "with a message: '", threadId, e.getClass().getSimpleName(), e.getMessage());

@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.minimalism.common.AllEnums.FileTypes;
 import com.minimalism.common.AllEnums.OutputDestinations;
-import com.minimalism.files.domain.entities.Entity;
+import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.entities.ResidualBufferBytesHandler;
 import com.minimalism.files.domain.input.InputFileInformation;
 import com.minimalism.files.domain.input.ServiceContext;
@@ -49,7 +49,6 @@ public class Reader {
     ServiceContext serviceContext;
     SlicerConfigurationInformation slicerConfguration;
     private byte[] leftOversFromPreviousIteration;
-    //ResidualBufferBytesHandler residualsHandler;
     BrokerConfiguration brokerConfiguration;
 
     public Reader(ServiceContext context, boolean headerPresent) throws NoSuchPathException, IOException {
@@ -255,7 +254,7 @@ public class Reader {
         // format and publish residual records
         if(!residualRecords.isEmpty()) {
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
-            List<Entity> records = formatter.format(residualRecords);
+            List<InputEntity> records = formatter.format(residualRecords);
             if(records != null) {
                 logger.info("Got residual records from Formatter: {}", records.size());
                 // publish the parsed records.
@@ -278,7 +277,7 @@ public class Reader {
         // format and publish residual records
         if(!residualRecords.isEmpty()) {
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
-            List<Entity> records = formatter.format(residualRecords);
+            List<InputEntity> records = formatter.format(residualRecords);
             if(records != null) {
                 logger.info("Got residual records from Formatter: {}", records.size());
                 // publish the parsed records.
@@ -359,18 +358,17 @@ public class Reader {
         ((Worker)worker).reset(offsetInFile, iteration);
     }
 
-    private void publishRecords(List<Entity> records) {
+    private void publishRecords(List<InputEntity> records) {
         if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
-                kafkaPublisher.publish(records);
+                //kafkaPublisher.publish(records, true);
+                kafkaPublisher.publishGenericRecord(records);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
     }
-
-    
 
     private void setupOutput() throws NoSuchPathException{
         try {
