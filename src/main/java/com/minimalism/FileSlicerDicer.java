@@ -5,10 +5,10 @@ import java.io.IOException;
 import com.minimalism.files.domain.input.ServiceContext;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.input.Reader;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

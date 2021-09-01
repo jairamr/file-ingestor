@@ -11,11 +11,11 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 
-import com.minimalism.common.AllEnums.DataTypes;
-import com.minimalism.files.FileSystemConfigHelper;
+import com.minimalism.shared.FileSystemConfigHelper;
+import com.minimalism.shared.common.AllEnums.DataTypes;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 import com.minimalism.files.domain.input.FieldDescriptor;
 import com.minimalism.files.domain.input.RecordDescriptor;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 /**
  * @author R Jairam Iyer

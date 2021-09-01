@@ -3,7 +3,7 @@ package com.minimalism.files.domain.input;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.minimalism.common.AllEnums.RecordTypes;
+import com.minimalism.shared.common.AllEnums.RecordTypes;
 
 import org.apache.commons.lang3.tuple.Pair;
 

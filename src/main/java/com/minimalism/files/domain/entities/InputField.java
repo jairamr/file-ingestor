@@ -9,7 +9,7 @@ import javax.json.JsonObject;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.minimalism.common.AllEnums.DataTypes;
+import com.minimalism.shared.common.AllEnums.DataTypes;
 
 public class InputField {
     private static short TYPE_BIT = 3;

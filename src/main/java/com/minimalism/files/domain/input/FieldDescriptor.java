@@ -5,7 +5,7 @@ import java.util.Objects;
 import javax.json.Json;
 import javax.json.JsonObject;
 
-import com.minimalism.common.AllEnums.DataTypes;
+import com.minimalism.shared.common.AllEnums.DataTypes;
 
 public class FieldDescriptor {
     private String fieldName;

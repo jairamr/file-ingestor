@@ -13,10 +13,10 @@ import java.util.Map;
 import com.minimalism.common.AllEnums.OutputDestinations;
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.input.ServiceContext;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.service.output.kafka.BrokerConfiguration;
 import com.minimalism.files.service.output.kafka.BrokerConfigurationReader;
 import com.minimalism.files.service.output.kafka.Publisher;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -249,9 +249,9 @@ public class CSVFileReader implements IFileReader{
     private void setupOutput() throws NoSuchPathException{
         try {
             switch(this.serviceContext.getDestinationType()) {
-                case FILE_SYSTEM:
+                case FILESYSTEM:
                 break;
-                case JMS:
+                case AMQP:
                 break;
                 case KAFKA:
                     BrokerConfigurationReader brokerConfigurationReader = 
@@ -259,13 +259,11 @@ public class CSVFileReader implements IFileReader{
                     this.serviceContext.getRecordName());
                     this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
                 break;
-                case RABBIT_MQ:
-                break;
                 case RESTFUL:
                 break;
-                case SQL_SERVER:
+                case DATABASE:
                 break;
-                case WEB_SOCKET:
+                case WEBSOCKET:
                 break;
                 default:
                 break;

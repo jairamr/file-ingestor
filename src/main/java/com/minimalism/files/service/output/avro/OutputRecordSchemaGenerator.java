@@ -7,11 +7,11 @@ import java.nio.file.StandardOpenOption;
 
 import javax.json.JsonObject;
 
-import com.minimalism.common.AllEnums.Directories;
+import com.minimalism.shared.common.AllEnums.Directories;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 import com.minimalism.files.domain.InputOutputFileSystem;
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.input.RecordDescriptor;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.service.output.generic.EntityBuilder;
 
 public class OutputRecordSchemaGenerator {

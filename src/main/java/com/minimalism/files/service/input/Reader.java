@@ -12,7 +12,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import com.minimalism.common.AllEnums.FileTypes;
+import com.minimalism.shared.common.AllEnums.FileTypes;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 import com.minimalism.common.AllEnums.OutputDestinations;
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.entities.ResidualBufferBytesHandler;
@@ -21,7 +22,6 @@ import com.minimalism.files.domain.input.ServiceContext;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.output.kafka.BrokerConfiguration;
@@ -373,9 +373,9 @@ public class Reader {
     private void setupOutput() throws NoSuchPathException{
         try {
             switch(this.serviceContext.getDestinationType()) {
-                case FILE_SYSTEM:
+                case FILESYSTEM:
                 break;
-                case JMS:
+                case AMQP:
                 break;
                 case KAFKA:
                     BrokerConfigurationReader brokerConfigurationReader = 
@@ -383,13 +383,11 @@ public class Reader {
                     this.serviceContext.getRecordName());
                     this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
                 break;
-                case RABBIT_MQ:
-                break;
                 case RESTFUL:
                 break;
-                case SQL_SERVER:
+                case DATABASE:
                 break;
-                case WEB_SOCKET:
+                case WEBSOCKET:
                 break;
                 default:
                 break;

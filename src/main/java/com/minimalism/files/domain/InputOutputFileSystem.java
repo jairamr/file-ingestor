@@ -6,10 +6,10 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.minimalism.AppConfigHelper;
-import com.minimalism.common.AllEnums.Directories;
-import com.minimalism.files.FileSystemConfigHelper;
-import com.minimalism.files.exceptions.NoSuchPathException;
+import com.minimalism.shared.AppConfigHelper;
+import com.minimalism.shared.FileSystemConfigHelper;
+import com.minimalism.shared.common.AllEnums.Directories;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 
 public class InputOutputFileSystem {
     private InputOutputFileSystem(){}

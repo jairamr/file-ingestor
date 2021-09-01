@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 
-import com.minimalism.common.AllEnums.FileTypes;
+import com.minimalism.shared.common.AllEnums.FileTypes;
 
 public class InputFileInformation {
     private Path directory;

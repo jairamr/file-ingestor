@@ -7,10 +7,10 @@ import java.io.IOException;
 import javax.json.JsonObject;
 
 import com.minimalism.files.domain.input.RecordDescriptor;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.service.input.RecordDescriptorReader;
 import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 
 import org.junit.jupiter.api.Test;
 

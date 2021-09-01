@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.minimalism.common.AllEnums.DataTypes;
-import com.minimalism.common.AllEnums.RecordTypes;
+import com.minimalism.shared.common.AllEnums.DataTypes;
+import com.minimalism.shared.common.AllEnums.RecordTypes;
 import com.minimalism.files.domain.input.FieldDescriptor;
 import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.exceptions.RecordDescriptorException;

@@ -8,13 +8,13 @@ import java.nio.file.attribute.BasicFileAttributeView;
 
 import javax.json.JsonObject;
 
-import com.minimalism.AppConfigHelper;
-import com.minimalism.common.AllEnums.FileTypes;
+import com.minimalism.shared.AppConfigHelper;
+import com.minimalism.shared.FileSystemConfigHelper;
+import com.minimalism.shared.common.AllEnums.FileTypes;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 import com.minimalism.common.AllEnums.OutputDestinations;
-import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.exceptions.FileTypeNotSupportedException;
 import com.minimalism.files.exceptions.InvalidFileException;
-import com.minimalism.files.exceptions.NoSuchPathException;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.service.input.RecordDescriptorReader;
 import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;

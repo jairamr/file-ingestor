@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.minimalism.common.AllEnums.FileTypes;
+import com.minimalism.shared.common.AllEnums.FileTypes;
 import com.minimalism.files.service.input.InputBufferReadStatus;
 
 public class ResidualBufferBytesHandler {
