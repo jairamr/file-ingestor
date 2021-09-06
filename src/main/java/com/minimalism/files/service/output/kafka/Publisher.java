@@ -5,10 +5,11 @@ import java.util.Properties;
 
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.entities.InputField;
-import com.minimalism.files.domain.input.ServiceContext;
+import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.service.output.EntityTransformer;
 import com.minimalism.files.service.output.IPublish;
 import com.minimalism.shared.domain.Entity;
+import com.minimalism.shared.service.BrokerConfiguration;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -27,7 +28,7 @@ public class Publisher implements IPublish {
     private Schema avroSchema;
     private BrokerConfiguration configuration;
     
-    public Publisher(BrokerConfiguration configuration, ServiceContext serviceContext) {
+    public Publisher(BrokerConfiguration configuration, IngestorContext serviceContext) {
         this.configuration = configuration;
         this.avroSchema = serviceContext.getAvroSchema();
     }

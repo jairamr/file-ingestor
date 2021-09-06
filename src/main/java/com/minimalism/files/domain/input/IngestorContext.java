@@ -8,41 +8,46 @@ import java.nio.file.attribute.BasicFileAttributeView;
 
 import javax.json.JsonObject;
 
-import com.minimalism.shared.AppConfigHelper;
-import com.minimalism.shared.FileSystemConfigHelper;
+import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.common.AllEnums.FileTypes;
+import com.minimalism.shared.domain.IntakeStats;
+import com.minimalism.shared.domain.ServiceConfiguration;
+import com.minimalism.shared.exceptions.FileTypeNotSupportedException;
+import com.minimalism.shared.exceptions.InvalidFileException;
 import com.minimalism.shared.exceptions.NoSuchPathException;
-import com.minimalism.common.AllEnums.OutputDestinations;
-import com.minimalism.files.exceptions.FileTypeNotSupportedException;
-import com.minimalism.files.exceptions.InvalidFileException;
+import com.minimalism.shared.service.ClientConfigHelper;
+import com.minimalism.shared.service.FileSystemConfigHelper;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.service.input.RecordDescriptorReader;
 import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
 
 import org.apache.avro.Schema;
 
-public class ServiceContext {
+public class IngestorContext {
     private String clientName;
     private String recordName;
     InputFileInformation inputFileInformation;
     RecordDescriptor recordDescriptor;
-    String operatingMode;
-    private OutputDestinations destinationType;
-    private OutputDestinations failoverDestinationType;
+    ServiceConfiguration serviceConfiguration;
+    private IntakeStats intakeStats;
     private Schema avroSchema;
     
-    public ServiceContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
+    public IngestorContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
         this.clientName = clientName;
-        this.operatingMode = AppConfigHelper.getInstance().getServiceOperatingMode();
+        ClientConfigHelper configHelper = new ClientConfigHelper(clientName);
+        this.serviceConfiguration = configHelper.getServiceConfiguration(clientName);
+
         buildInputFileInformation(fileName);
+        
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
         this.recordName = this.recordDescriptor.getRecordName();
-        buildOutputDestinations();
+        
         JsonObject avroSchemaJson = OutputRecordSchemaGenerator.createAvroSchema(clientName, this.recordDescriptor, this.recordName);
         this.avroSchema = new Schema.Parser().parse(avroSchemaJson.toString());
+        
     }
 
-    public ServiceContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
+    public IngestorContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
         this(clientName, fileName);
         this.recordName = recordName;
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName, recordName);
@@ -52,7 +57,7 @@ public class ServiceContext {
     }
 
     public String getOperatingMode() {
-        return this.operatingMode;
+        return this.serviceConfiguration.getOperatingMode();
     }
 
     public String getRecordName() {
@@ -67,12 +72,12 @@ public class ServiceContext {
         return this.recordDescriptor;
     }
 
-    public OutputDestinations getDestinationType() {
-        return this.destinationType;
+    public DataSources getDestinationType() {
+        return this.serviceConfiguration.getOutputEndpoint();
     }
 
-    public OutputDestinations getFailoverDestinationType() {
-        return this.failoverDestinationType;
+    public DataSources getFailoverDestinationType() {
+        return this.serviceConfiguration.getOutputFailEndpoint();
     }
 
     public Schema getAvroSchema() {
@@ -106,12 +111,5 @@ public class ServiceContext {
         } catch (NoSuchPathException e) {
             throw e;
         }
-    }
-    
-    private void buildOutputDestinations() throws IOException {
-        this.destinationType = Enum.valueOf(OutputDestinations.class, 
-        AppConfigHelper.getInstance().getOutputEndpoint().toUpperCase());
-        this.failoverDestinationType = Enum.valueOf(OutputDestinations.class,
-        AppConfigHelper.getInstance().getOutputFailoverEndpoint().toUpperCase());
     }
 }

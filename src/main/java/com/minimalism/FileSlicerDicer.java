@@ -2,12 +2,13 @@ package com.minimalism;
 
 import java.io.IOException;
 
-import com.minimalism.files.domain.input.ServiceContext;
-import com.minimalism.files.exceptions.FileTypeNotSupportedException;
-import com.minimalism.files.exceptions.InvalidFileException;
+import com.minimalism.files.domain.input.IngestorContext;
+import com.minimalism.files.domain.output.IngestServiceSummary;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.input.Reader;
+import com.minimalism.shared.exceptions.FileTypeNotSupportedException;
+import com.minimalism.shared.exceptions.InvalidFileException;
 import com.minimalism.shared.exceptions.NoSuchPathException;
 
 import org.slf4j.Logger;
@@ -45,24 +46,26 @@ public class FileSlicerDicer
             headersPresent = Boolean.parseBoolean(args[2]);
         }
         Reader reader = null;
-        ServiceContext context = null;
+        IngestorContext context = null;
         try {
             if(args.length < 3) {
-                context = new ServiceContext(clientName, inputFileName, recordDescriptorFileName);
+                context = new IngestorContext(clientName, inputFileName, recordDescriptorFileName);
                 reader = new Reader(context, headersPresent);
             }
             if(args.length == 3) {
-                context = new ServiceContext(clientName, inputFileName);
+                context = new IngestorContext(clientName, inputFileName);
                 reader = new Reader(context, headersPresent);
             } else if(args.length == 4) {
-                context = new ServiceContext(clientName, inputFileName, recordDescriptorFileName);
+                context = new IngestorContext(clientName, inputFileName, recordDescriptorFileName);
                 reader = new Reader(context, headersPresent);
             }
 
             long byteCount = 0;
             
             if(reader != null) {
-                byteCount = reader.read();
+                reader.read();
+                IngestServiceSummary runSummary = reader.getIngestionSummary();
+                logger.info("Run completed with following statistics: {}", runSummary);
             } else {
                 System.console().printf("Unable to create an instance of com.minimalism.FileSlicerDicer");
                 System.exit(1);

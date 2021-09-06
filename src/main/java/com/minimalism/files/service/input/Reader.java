@@ -12,20 +12,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.common.AllEnums.FileTypes;
+import com.minimalism.shared.exceptions.FileTypeNotSupportedException;
+import com.minimalism.shared.exceptions.InvalidFileException;
 import com.minimalism.shared.exceptions.NoSuchPathException;
-import com.minimalism.common.AllEnums.OutputDestinations;
+import com.minimalism.shared.service.BrokerConfiguration;
+import com.minimalism.shared.service.BrokerConfigurationReader;
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.entities.ResidualBufferBytesHandler;
 import com.minimalism.files.domain.input.InputFileInformation;
-import com.minimalism.files.domain.input.ServiceContext;
+import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;
-import com.minimalism.files.exceptions.FileTypeNotSupportedException;
-import com.minimalism.files.exceptions.InvalidFileException;
+import com.minimalism.files.domain.output.IngestServiceSummary;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
-import com.minimalism.files.service.output.kafka.BrokerConfiguration;
-import com.minimalism.files.service.output.kafka.BrokerConfigurationReader;
 import com.minimalism.files.service.output.kafka.Publisher;
 
 import org.slf4j.Logger;
@@ -46,17 +47,19 @@ import org.slf4j.LoggerFactory;
 public class Reader {
     private static Logger logger = LoggerFactory.getLogger(Reader.class);
     
-    ServiceContext serviceContext;
+    IngestorContext serviceContext;
     SlicerConfigurationInformation slicerConfguration;
     private byte[] leftOversFromPreviousIteration;
     BrokerConfiguration brokerConfiguration;
+    IngestServiceSummary ingestionSummary;
 
-    public Reader(ServiceContext context, boolean headerPresent) throws NoSuchPathException, IOException {
+    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException, IOException {
         serviceContext = context;
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
         var slicer = new Slicer(this.serviceContext.getInputFileInformation());
         this.slicerConfguration = slicer.sliceFile();
-        
+        ingestionSummary = new IngestServiceSummary();
+
         setupOutput();
     }
 
@@ -64,7 +67,7 @@ public class Reader {
         
         // We expect the filename is the input file that must be processed. It must have a file name and
         // an extension
-        this.serviceContext = new ServiceContext(clientName, fileName);
+        this.serviceContext = new IngestorContext(clientName, fileName);
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
 
         var slicer = new Slicer(this.serviceContext.getInputFileInformation());
@@ -83,7 +86,9 @@ public class Reader {
     public InputFileInformation getFileInformation() {
         return this.serviceContext.getInputFileInformation();
     }
-    
+    public IngestServiceSummary getIngestionSummary() {
+        return this.ingestionSummary;
+    }
     /** 
      * @return long
      * @throws IOException
@@ -92,10 +97,8 @@ public class Reader {
      * @throws NoSuchPathException
      * @throws ServiceAbortedException
      */
-    public long read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException {
+    public void read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException {
         logger.info("Reading input file: {}", this.serviceContext.getInputFileInformation().getFilePath());
-
-        long numberofRecordsProcessed = 0;
 
         if(this.serviceContext.getInputFileInformation().getFileType() == FileTypes.CSV) {
             if(this.serviceContext.getOperatingMode().equalsIgnoreCase("single")) {
@@ -111,8 +114,6 @@ public class Reader {
             throw new FileTypeNotSupportedException(String.format("The input file type: %s is not supported. This utility works with comma-separated, binary and text files only.", 
             this.serviceContext.getInputFileInformation().getFileType().name()));
         }
-        
-        return numberofRecordsProcessed;
     }
 
     
@@ -225,14 +226,17 @@ public class Reader {
                     var anyThreadAborted = resultsFromWorkers.stream().anyMatch(InputBufferReadStatus::hasError);
                     if(!anyThreadAborted) {
                         handleResidualBytesInBuffers(resultsFromWorkers);
+                        resultsFromWorkers.stream().forEach(rfws -> this.ingestionSummary.addStat(rfws.getIterationStatistics()));
                     } else {
                         // if thread has aborted, many records are lost! Abort this batch!
                         throw new ServiceAbortedException("One or more threads aborted with an exception.");
                     }
                 } else {
                     //something seriously wrong!
+                    throw new ServiceAbortedException(String.format("Expected %d results but received %d. Please check logfile and correct the situation.", 
+                                                        workers.size(), resultsFromWorkers.size()));
                 }
-                logger.info("Residual bytes handler took {} ms", System.currentTimeMillis() - start);
+                logger.info("Residual bytes handler completed in {} ms", System.currentTimeMillis() - start);
             }
         } finally {
             if(inputBufferReaderService != null)
@@ -256,9 +260,10 @@ public class Reader {
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
             List<InputEntity> records = formatter.format(residualRecords);
             if(records != null) {
-                logger.info("Got residual records from Formatter: {}", records.size());
+                logger.info("Got {} residual records from Formatter.", records.size());
                 // publish the parsed records.
-                publishRecords(records); 
+                publishRecords(records);
+                resultsFromWorkers.stream().forEach(ibrs -> ibrs.setIterationEndTime(System.currentTimeMillis())); 
             }
         }
     }
@@ -279,9 +284,10 @@ public class Reader {
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
             List<InputEntity> records = formatter.format(residualRecords);
             if(records != null) {
-                logger.info("Got residual records from Formatter: {}", records.size());
+                logger.info("Got {} residual records from Formatter.", records.size());
                 // publish the parsed records.
                 publishRecords(records); 
+                resultsFromWorker.setIterationEndTime(System.currentTimeMillis());
             }
         }
     }
@@ -359,7 +365,7 @@ public class Reader {
     }
 
     private void publishRecords(List<InputEntity> records) {
-        if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
+        if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
                 //kafkaPublisher.publish(records, true);
@@ -373,9 +379,11 @@ public class Reader {
     private void setupOutput() throws NoSuchPathException{
         try {
             switch(this.serviceContext.getDestinationType()) {
-                case FILESYSTEM:
+                case ACTIVE_MQ:
                 break;
-                case AMQP:
+                case BROKER_J:
+                break;
+                case RABBIT_MQ:
                 break;
                 case KAFKA:
                     BrokerConfigurationReader brokerConfigurationReader = 
@@ -383,11 +391,19 @@ public class Reader {
                     this.serviceContext.getRecordName());
                     this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
                 break;
-                case RESTFUL:
+                case NTFS:
                 break;
-                case DATABASE:
+                case UNIX_FS:
                 break;
-                case WEBSOCKET:
+                case GENERIC_REST:
+                break;
+                case SPRING_BOOT:
+                break;
+                case GENERIC_WEBSOCKET:
+                break;
+                case SPRING_MVC:
+                break;
+                case ASP:
                 break;
                 default:
                 break;

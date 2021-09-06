@@ -4,8 +4,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import com.minimalism.shared.FileSystemConfigHelper;
 import com.minimalism.shared.exceptions.NoSuchPathException;
+import com.minimalism.shared.service.FileSystemConfigHelper;
 
 public class OutputConfigurationReader {
     private Properties properties;

@@ -5,9 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.minimalism.files.domain.InputOutputFileSystem;
-import com.minimalism.shared.AppConfigHelper;
-import com.minimalism.shared.FileSystemConfigHelper;
 import com.minimalism.shared.exceptions.NoSuchPathException;
+import com.minimalism.shared.service.AppConfigHelper;
+import com.minimalism.shared.service.FileSystemConfigHelper;
 
 public class Setup {
     

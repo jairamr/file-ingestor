@@ -10,13 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.minimalism.common.AllEnums.OutputDestinations;
 import com.minimalism.files.domain.entities.InputEntity;
-import com.minimalism.files.domain.input.ServiceContext;
-import com.minimalism.files.service.output.kafka.BrokerConfiguration;
-import com.minimalism.files.service.output.kafka.BrokerConfigurationReader;
+import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.service.output.kafka.Publisher;
+import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.exceptions.NoSuchPathException;
+import com.minimalism.shared.service.BrokerConfiguration;
+import com.minimalism.shared.service.BrokerConfigurationReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,14 +25,14 @@ public class CSVFileReader implements IFileReader{
     private static Logger logger = LoggerFactory.getLogger(CSVFileReader.class);
 
     private int id;
-    private ServiceContext serviceContext;
+    private IngestorContext serviceContext;
     private BrokerConfiguration brokerConfiguration;
     private int bufferSize;
     private int iteration;
     private Map<Integer, ByteBuffer> recordsFromFile;
     private MappedByteBuffer mbb;
 
-    public CSVFileReader(int workerId, ServiceContext context, int bufferSize) throws NoSuchPathException {
+    public CSVFileReader(int workerId, IngestorContext context, int bufferSize) throws NoSuchPathException {
         this.id = workerId;
         this.serviceContext = context;
         this.bufferSize = bufferSize;
@@ -77,16 +77,24 @@ public class CSVFileReader implements IFileReader{
         }
         if(records != null) {
             // publish the parsed records.
-            long start = System.currentTimeMillis();
-            publishRecords(records);
-            logger.info("For iteration:{}, CSVFileReader took: {} ms", iteration, System.currentTimeMillis() - start);
+            try{
+                publishRecords(records);
+                if(returnValue != null) { 
+                    returnValue.setPublishingEndTime(System.currentTimeMillis());
+                }
+            } catch(InterruptedException e) {
+                if(returnValue != null) {
+                    returnValue.setException(e);
+                }
+                Thread.currentThread().interrupt();
+            }
         }
         return returnValue;
     }
     /** 
      * <p>
-     * Windows systems create CSV files with <CR><LF> combination to demarcate records, while Linix
-     * system use either <CR> or <LF>. We handle both cases. The <em>processTwoCharRecordSeparator</em>
+     * Windows systems create CSV files with <CR><LF> combination to demarcate records, while Linux
+     * system use <LF>. We handle both cases. The <em>processTwoCharRecordSeparator</em>
      * method handles CSV files created in Windows Systems.
      * </p>
      * <p>
@@ -125,7 +133,6 @@ public class CSVFileReader implements IFileReader{
         
         return readStatus;
     }
-    
     /** 
      * @param thisBatchOffsetInFile
      * @param readStatus
@@ -196,8 +203,8 @@ public class CSVFileReader implements IFileReader{
         
         readStatus.setRecordsRead(this.recordsFromFile.size());
         readStatus.setBytesRead(bytesRead);
+        readStatus.setParsingEndTime(System.currentTimeMillis());
     }
-    
     /** 
      * @return int
      */
@@ -217,8 +224,6 @@ public class CSVFileReader implements IFileReader{
         }
         return startFrom; 
     }
-
-    
     /** 
      * @param readStatus
      * @return int
@@ -245,13 +250,15 @@ public class CSVFileReader implements IFileReader{
         }
         return recordStart;
     }
-
+    
     private void setupOutput() throws NoSuchPathException{
         try {
             switch(this.serviceContext.getDestinationType()) {
-                case FILESYSTEM:
+                case ACTIVE_MQ:
                 break;
-                case AMQP:
+                case BROKER_J:
+                break;
+                case RABBIT_MQ:
                 break;
                 case KAFKA:
                     BrokerConfigurationReader brokerConfigurationReader = 
@@ -259,11 +266,19 @@ public class CSVFileReader implements IFileReader{
                     this.serviceContext.getRecordName());
                     this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
                 break;
-                case RESTFUL:
+                case NTFS:
                 break;
-                case DATABASE:
+                case UNIX_FS:
                 break;
-                case WEBSOCKET:
+                case GENERIC_REST:
+                break;
+                case SPRING_BOOT:
+                break;
+                case GENERIC_WEBSOCKET:
+                break;
+                case SPRING_MVC:
+                break;
+                case ASP:
                 break;
                 default:
                 break;
@@ -273,16 +288,10 @@ public class CSVFileReader implements IFileReader{
         }
     }
 
-    private void publishRecords(List<InputEntity> records) {
-        if(this.serviceContext.getDestinationType() == OutputDestinations.KAFKA) {
+    private void publishRecords(List<InputEntity> records) throws InterruptedException{
+        if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
-            try {
-                //kafkaPublisher.publish(records, true);
-                kafkaPublisher.publishGenericRecord(records);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            
+            kafkaPublisher.publishGenericRecord(records);
         }
     }
 }
