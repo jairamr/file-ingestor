@@ -3,10 +3,11 @@ package com.minimalism;
 import java.io.IOException;
 
 import com.minimalism.files.domain.input.IngestorContext;
-import com.minimalism.files.domain.output.IngestServiceSummary;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.input.Reader;
+import com.minimalism.files.service.output.IntakeStatsPublisher;
+import com.minimalism.shared.domain.IngestServiceSummary;
 import com.minimalism.shared.exceptions.FileTypeNotSupportedException;
 import com.minimalism.shared.exceptions.InvalidFileException;
 import com.minimalism.shared.exceptions.NoSuchPathException;
@@ -22,7 +23,6 @@ public class FileSlicerDicer
      */
     public static void main( String[] args )
     {
-        long startTime = System.currentTimeMillis();
         String clientName = null;
         String inputFileName = null;
         String recordDescriptorFileName = null;
@@ -59,19 +59,17 @@ public class FileSlicerDicer
                 context = new IngestorContext(clientName, inputFileName, recordDescriptorFileName);
                 reader = new Reader(context, headersPresent);
             }
-
-            long byteCount = 0;
             
             if(reader != null) {
                 reader.read();
                 IngestServiceSummary runSummary = reader.getIngestionSummary();
+                IntakeStatsPublisher statsPublisher = new IntakeStatsPublisher();
+                statsPublisher.saveStats(clientName, inputFileName, context.getRecordName(), runSummary);
                 logger.info("Run completed with following statistics: {}", runSummary);
             } else {
                 System.console().printf("Unable to create an instance of com.minimalism.FileSlicerDicer");
                 System.exit(1);
             }
-            double duration = (double)(System.currentTimeMillis() - startTime);
-            logger.info("Read {} bytes in {} seconds", byteCount, duration/1000);
         } catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException | RecordDescriptorException | ServiceAbortedException e) {
             Thread.currentThread().interrupt();
             logger.error("Service terminated with error due to: {}", e.getMessage());

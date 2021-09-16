@@ -26,7 +26,6 @@ public class InputRecordFormatter {
      * @return Map<Integer, List<String>>
      */
     public List<InputEntity> format(Map<Integer, ByteBuffer> inputFileRecords) {
-        long startTime = System.currentTimeMillis();
         List<InputEntity> records = new ArrayList<>();
         
         var recordNumber = 0;
@@ -41,8 +40,7 @@ public class InputRecordFormatter {
                 logger.error("Exception while adding record Entity: message: {}, stack:{}", e.getMessage(), e.getStackTrace());
             }
         }
-        logger.info("Formatter took {} ms.", System.currentTimeMillis() - startTime);
-
+        logger.info("Formatter record count: {}", recordNumber);
         return records;
     }
 
@@ -54,6 +52,7 @@ public class InputRecordFormatter {
             records.add(recordNumber++, 
             EntityBuilder.build(inputFileRecords.get(i).toString(), this.recordDescriptor));
         }
+        logger.info("Formatter residual record count: {}", recordNumber);
         return records;
     }
 

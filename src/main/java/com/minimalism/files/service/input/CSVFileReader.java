@@ -64,7 +64,10 @@ public class CSVFileReader implements IFileReader{
         InputBufferReadStatus returnValue = null;
         List<InputEntity> records = null;
         byte[] recordSeparators = this.serviceContext.getRecordDescriptor().getRecordSeparator();
-    
+        
+        // worker threads are reused. Clear the previous iteration results.
+        this.recordsFromFile.clear();
+        
         if(recordSeparators[1] != 0x00) {
             returnValue = processTwoCharRecordSeparator(thisBatchOffsetInFile, iteration, numberOfThreads);
         } else {
@@ -80,7 +83,7 @@ public class CSVFileReader implements IFileReader{
             try{
                 publishRecords(records);
                 if(returnValue != null) { 
-                    returnValue.setPublishingEndTime(System.currentTimeMillis());
+                    returnValue.getIterationStatistics().setPublishingEndTime(System.currentTimeMillis());
                 }
             } catch(InterruptedException e) {
                 if(returnValue != null) {
@@ -116,7 +119,9 @@ public class CSVFileReader implements IFileReader{
         var readStatus = new InputBufferReadStatus(currentThread.getId(),
                         currentThread.getName(), numberOfThreads, iteration, thisBatchOffsetInFile, 
                         thisBuffersOffsetInFile, this.bufferSize);
-        readStatus.setIterationStartTime(System.currentTimeMillis());
+        readStatus.getIterationStatistics().setIterationStartTime(System.currentTimeMillis());
+        readStatus.getIterationStatistics().setByteOffsetInFile(thisBatchOffsetInFile);
+        readStatus.getIterationStatistics().setByteOffsetForBuffer(thisBuffersOffsetInFile);
 
         try(var inputFile = new RandomAccessFile(this.serviceContext.getInputFileInformation().getFilePath().toString(), "rw")) {
             FileChannel fcInputFile = inputFile.getChannel(); 
@@ -179,7 +184,7 @@ public class CSVFileReader implements IFileReader{
         // if we get to the buffer's end (position == limit) and not finding the end-of-record...
         // handle residual bytes in the ByteBuffer
         // sometimes, near the end of the file, there can be a bunch of NULL values, due to variable
-        // fields sizes. Since it is the last record, there are record separators and these NULL
+        // fields sizes. Since it is the last record, there are no record separators and these NULL
         // characters will remain in the file. WE CANNOT PROCESS NULL STRINGS!
         // So, we better check and drop them!
         if(this.mbb.position() == this.mbb.limit()) {
@@ -203,8 +208,9 @@ public class CSVFileReader implements IFileReader{
         
         readStatus.setRecordsRead(this.recordsFromFile.size());
         readStatus.setBytesRead(bytesRead);
-        readStatus.setParsingEndTime(System.currentTimeMillis());
+        readStatus.getIterationStatistics().setParsingEndTime(System.currentTimeMillis());
     }
+
     /** 
      * @return int
      */

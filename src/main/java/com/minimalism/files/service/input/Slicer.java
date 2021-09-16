@@ -3,54 +3,31 @@ package com.minimalism.files.service.input;
 import java.io.IOException;
 
 import com.minimalism.files.domain.SystemRecources;
-import com.minimalism.files.domain.input.InputFileInformation;
+import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;
-import com.minimalism.shared.service.AppConfigHelper;
-
 public class Slicer {
-    private InputFileInformation inputFileInformation;
-
-    public Slicer(InputFileInformation inputFileInformation) {
-        this.inputFileInformation = inputFileInformation;
-    }
-
-    
-    /** 
-     * @return SlicerConfigurationInformation
-     * @throws IOException
-     */
-    public SlicerConfigurationInformation sliceFile() throws IOException {
-        SlicerConfigurationInformation slicerConfig = null;
-        slicerConfig = prepareForSlicing();
-        return slicerConfig;
-    }
-
-    
-    /** 
-     * @return SlicerConfigurationInformation
-     * @throws IOException
-     */
-    private SlicerConfigurationInformation prepareForSlicing() throws IOException {
+    private static int BUFFER_SIZE_MULTIPLIER = 1024;
+    public SlicerConfigurationInformation 
+    sliceFile(IngestorContext context) {
+        
         SlicerConfigurationInformation returnValue = null;
 
-        var opMode = AppConfigHelper.getInstance().getServiceOperatingMode();
-        if(opMode.equalsIgnoreCase("balanced")) {
-            returnValue = balancedOperationalMode();
-        } else if(opMode.equalsIgnoreCase("single")) { 
-            returnValue = singleThreadedOperationMode();
+        if(context.getServiceConfiguration().getOperatingMode().equalsIgnoreCase("balanced")) {
+            returnValue = balancedOperationalMode(context);
+        } else if(context.getServiceConfiguration().getOperatingMode().equalsIgnoreCase("single")) { 
+            returnValue = singleThreadedOperationMode(context);
         }
         return returnValue;
     }
-
     
     /** 
      * @return SlicerConfigurationInformation
      * @throws IOException
      */
-    private SlicerConfigurationInformation singleThreadedOperationMode() throws IOException {
+    private SlicerConfigurationInformation 
+    singleThreadedOperationMode(IngestorContext context) {
         
-        int bufferSize = AppConfigHelper.getInstance().getBufferSize();
-        
+        int bufferSize = context.getServiceConfiguration().getFileReadBufferSize() * BUFFER_SIZE_MULTIPLIER;
         SystemRecources.getInstance().loadSystemState();
 
         var targetThreadCount = 0;
@@ -58,52 +35,28 @@ public class Slicer {
         int availableCores = SystemRecources.getInstance().getJVMMaxProcessors();
         
         targetThreadCount = 1;
-        iterations = (int) inputFileInformation.getFileSize() / bufferSize;
-        if(inputFileInformation.getFileSize() % bufferSize > 0) iterations++;
+        iterations = (int) context.getInputFileInformation().getFileSize() / bufferSize;
+        if(context.getInputFileInformation().getFileSize() % bufferSize > 0) iterations++;
     
         return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
-            this.inputFileInformation.getFileSize(), iterations, availableCores);
+            context.getInputFileInformation().getFileSize(), iterations, availableCores);
     }
-    
-    
+
     /** 
      * @return SlicerConfigurationInformation
      * @throws IOException
      */
-    private SlicerConfigurationInformation moreThanRequiredMemory(boolean singleThreaded) throws IOException {
-        int bufferSize = AppConfigHelper.getInstance().getBufferSize();
-
-        SystemRecources.getInstance().loadSystemState();
-
-        int availableCores = SystemRecources.getInstance().getJVMMaxProcessors();
-        int targetThreadCount = availableCores * AppConfigHelper.getInstance().getThreadsLoadingFactor();
-        
-        bufferSize = (int)inputFileInformation.getFileSize() / targetThreadCount;
-        
-        //In case there are residual bytes (due to division) we increase the buffer size by additional 100 bytes
-        long residualBytes = inputFileInformation.getFileSize() % targetThreadCount;
-        if(residualBytes > 0)
-            bufferSize += residualBytes;
-
-        return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
-            this.inputFileInformation.getFileSize(), 1, availableCores);
-    }
-
-    
-    /** 
-     * @return SlicerConfigurationInformation
-     * @throws IOException
-     */
-    private SlicerConfigurationInformation balancedOperationalMode() throws IOException {
-        var bufferSize = AppConfigHelper.getInstance().getBufferSize();
+    private SlicerConfigurationInformation 
+    balancedOperationalMode(IngestorContext context) {
+        var bufferSize = context.getServiceConfiguration().getFileReadBufferSize() * BUFFER_SIZE_MULTIPLIER;
         var availableCores = SystemRecources.getInstance().getJVMMaxProcessors();
-        var targetThreadCount = availableCores * AppConfigHelper.getInstance().getThreadsLoadingFactor();
+        var targetThreadCount = context.getServiceConfiguration().getThreadsLoadingFactor();
         var bytesProcessedPerIteration = bufferSize * targetThreadCount;
-        var iterations = (int)inputFileInformation.getFileSize() / bytesProcessedPerIteration;
-        if(inputFileInformation.getFileSize() % bytesProcessedPerIteration > 0) {
+        var iterations = (int)context.getInputFileInformation().getFileSize() / bytesProcessedPerIteration;
+        if(context.getInputFileInformation().getFileSize() % bytesProcessedPerIteration > 0) {
             iterations++;
         }
         return new SlicerConfigurationInformation(targetThreadCount, bufferSize, 
-        inputFileInformation.getFileSize(), iterations, availableCores);
+        context.getInputFileInformation().getFileSize(), iterations, availableCores);
     }
 }

@@ -238,7 +238,7 @@ public class RecordDescriptorReader {
                     break;
                     case "null-allowed":
                     parser.next();
-                    fd.setNullAllowed((parser.getValue() == JsonValue.FALSE));
+                    fd.setNullAllowed((parser.getValue() != JsonValue.FALSE));
                     break;
                     default:
                     break;

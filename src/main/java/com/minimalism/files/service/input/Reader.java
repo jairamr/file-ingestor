@@ -3,6 +3,7 @@ package com.minimalism.files.service.input;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.common.AllEnums.FileTypes;
+import com.minimalism.shared.domain.IngestServiceSummary;
 import com.minimalism.shared.exceptions.FileTypeNotSupportedException;
 import com.minimalism.shared.exceptions.InvalidFileException;
 import com.minimalism.shared.exceptions.NoSuchPathException;
@@ -24,7 +26,6 @@ import com.minimalism.files.domain.entities.ResidualBufferBytesHandler;
 import com.minimalism.files.domain.input.InputFileInformation;
 import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;
-import com.minimalism.files.domain.output.IngestServiceSummary;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.output.kafka.Publisher;
@@ -56,10 +57,12 @@ public class Reader {
     public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException, IOException {
         serviceContext = context;
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
-        var slicer = new Slicer(this.serviceContext.getInputFileInformation());
-        this.slicerConfguration = slicer.sliceFile();
-        ingestionSummary = new IngestServiceSummary();
-
+        var slicer = new Slicer();
+        this.slicerConfguration = slicer.sliceFile(serviceContext);
+        this.ingestionSummary = new IngestServiceSummary();
+        this.ingestionSummary.setFileName(this.serviceContext.getInputFileInformation().getFileName());
+        this.ingestionSummary.setRecordName(this.serviceContext.getRecordName());
+        this.ingestionSummary.setProcessingDate(LocalDate.now());  
         setupOutput();
     }
 
@@ -70,9 +73,12 @@ public class Reader {
         this.serviceContext = new IngestorContext(clientName, fileName);
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
 
-        var slicer = new Slicer(this.serviceContext.getInputFileInformation());
-        this.slicerConfguration = slicer.sliceFile();
-
+        var slicer = new Slicer();
+        this.slicerConfguration = slicer.sliceFile(this.serviceContext);
+        this.ingestionSummary = new IngestServiceSummary();
+        this.ingestionSummary.setFileName(this.serviceContext.getInputFileInformation().getFileName());
+        this.ingestionSummary.setRecordName(this.serviceContext.getRecordName());
+        this.ingestionSummary.setProcessingDate(LocalDate.now());        
         setupOutput();
     }
 
@@ -90,6 +96,17 @@ public class Reader {
         return this.ingestionSummary;
     }
     /** 
+     * <p>
+     * The entry point to start the ingestion of the records in the input file. Clients must
+     * call the <em>read()</em> function and check the <em>IngestServiceSummary</em> to determine
+     * the service statistics after a successful completion. Any of the several exceptions throws
+     * by the <em>read()</em> method indicate that the file was not properly, calling for
+     * operational correction(s).
+     * </p>
+     * <p>
+     * Depending onthe operating mode and the type of the input file, the <em>read()</em> method
+     * will delegate the task to an appropriate method.
+     * </p>  
      * @return long
      * @throws IOException
      * @throws FileTypeNotSupportedException
@@ -114,9 +131,7 @@ public class Reader {
             throw new FileTypeNotSupportedException(String.format("The input file type: %s is not supported. This utility works with comma-separated, binary and text files only.", 
             this.serviceContext.getInputFileInformation().getFileType().name()));
         }
-    }
-
-    
+    }    
     /** 
      * @param fileType
      * @throws IOException
@@ -131,10 +146,10 @@ public class Reader {
         ExecutorService inputBufferReaderService = null;
 
         try { 
-            inputBufferReaderService = Executors.newSingleThreadExecutor(); // newFixedThreadPool(numberOfBuffers);
+            inputBufferReaderService = Executors.newSingleThreadExecutor();
             Callable<InputBufferReadStatus> worker = null;
-                
-            for(var iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
+            var numberOfIterations = slicerConfguration.getIterationCount();
+            for(var iteration = 0; iteration < numberOfIterations; iteration++) {
                 thisBatchOffsetInFile = iteration * (long)bufferSize * numberOfBuffers;
                 if(iteration == 0) {
                     worker = prepareWorker(fileType, thisBatchOffsetInFile, iteration);
@@ -148,21 +163,24 @@ public class Reader {
                 // 2. Split valid Records from invalid records
                 // 3. Stream records to destination (as per configuration)
                 // 4. update update iteration statistics
+                boolean lastIteration = false;
                 try {
                     InputBufferReadStatus ibrs = iterationResult.get();
                     if(iterationResult.isDone()) {
-                        logger.info((ibrs.toString()));
-                        long start = System.currentTimeMillis();
+                        logger.info("{}", ibrs);
                         if(iterationResult != null) {
                             var anyThreadAborted = iterationResult.get().hasError();
                             if(!anyThreadAborted) {
-                                handleResidualBytesInBuffer(ibrs);
+                                if(iteration == numberOfIterations - 1) {
+                                    lastIteration = true;
+                                }
+                                handleResidualBytesInBuffer(ibrs, lastIteration);
+                                this.ingestionSummary.addStat(ibrs.getIterationStatistics());
                             } else {
                                 // if thread has aborted, many records are lost! Abort this batch!
                                 throw new ServiceAbortedException("One or more threads aborted with an exception.");
                             }
                         }
-                        logger.info("Residual bytes handler took {} ms", System.currentTimeMillis() - start);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     Thread.currentThread().interrupt();
@@ -175,6 +193,20 @@ public class Reader {
     }
 
     /** 
+     * <p>
+     * The <em>sliceAndProcessFile()</em> method is used when the service is operating in the
+     * 'balanced' mode. This mode is particularly useful when working with large input files,
+     * typically > 100MiB. 
+     * </p>
+     * <p>
+     * The input file is treated as a sequemce of bytes, which is sliced into equal sized
+     * chunks, based on the configuration set for a client. Each chunk(buffer) is processed
+     * by a separate thread. The java.io.RandomAccessFile class is used to map sections of
+     * the input file to each of the buffers, after computing the appropriate offsets. The 
+     * size of the input file would be way larger than the size of the buffers (we are minimalistic!)
+     * which will result in each thread iteratively processing the mapped portions of the 
+     * input file. 
+     * </p>
      * @param fileType
      * @throws IOException
      * @throws InterruptedException
@@ -191,8 +223,10 @@ public class Reader {
         try { 
             inputBufferReaderService = Executors.newFixedThreadPool(numberOfBuffers);
             List<Callable<InputBufferReadStatus>> workers = null;
-                
-            for(var iteration = 0; iteration < slicerConfguration.getIterationCount(); iteration++) {
+            
+            var numberOfIterations = slicerConfguration.getIterationCount();
+
+            for(var iteration = 0; iteration < numberOfIterations; iteration++) {
                 thisBatchOffsetInFile = iteration * (long)bufferSize * numberOfBuffers;
                 if(iteration == 0) {
                     workers = prepareWorkers(fileType, thisBatchOffsetInFile, iteration);
@@ -222,10 +256,15 @@ public class Reader {
                 // only when all threads have completed processing, we should be processing the 
                 // residual bytes from the buffers
                 long start = System.currentTimeMillis();
+                boolean lastIteration = false;
+
                 if(resultsFromWorkers.size() == workers.size()) {
                     var anyThreadAborted = resultsFromWorkers.stream().anyMatch(InputBufferReadStatus::hasError);
                     if(!anyThreadAborted) {
-                        handleResidualBytesInBuffers(resultsFromWorkers);
+                        if(iteration == numberOfIterations - 1) {
+                            lastIteration = true;
+                        }
+                        handleResidualBytesInBuffers(resultsFromWorkers, lastIteration);
                         resultsFromWorkers.stream().forEach(rfws -> this.ingestionSummary.addStat(rfws.getIterationStatistics()));
                     } else {
                         // if thread has aborted, many records are lost! Abort this batch!
@@ -244,47 +283,53 @@ public class Reader {
         }
     }
 
-    private void handleResidualBytesInBuffers(List<InputBufferReadStatus> resultsFromWorkers) throws IOException {
+    private void 
+    handleResidualBytesInBuffers(List<InputBufferReadStatus> resultsFromWorkers,
+                                    boolean lastIteration) throws IOException {
         var residualsHandler = new ResidualBufferBytesHandler
         (this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
             this.serviceContext.getInputFileInformation().getFileType());
 
         this.leftOversFromPreviousIteration = 
             residualsHandler.processResiduals
-            (resultsFromWorkers, leftOversFromPreviousIteration);
+            (resultsFromWorkers, leftOversFromPreviousIteration, lastIteration);
     
         List<ByteArrayOutputStream> residualRecords = residualsHandler.getResidualRecords();
-    
+        //update the bytes processed with the aggregate residual bytes
+        resultsFromWorkers.get(0).getIterationStatistics().addResidualProcessedBytes(
+            residualRecords.stream().mapToInt(ByteArrayOutputStream::size).sum());
         // format and publish residual records
         if(!residualRecords.isEmpty()) {
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
             List<InputEntity> records = formatter.format(residualRecords);
             if(records != null) {
-                logger.info("Got {} residual records from Formatter.", records.size());
-                // publish the parsed records.
+                resultsFromWorkers.get(0).getIterationStatistics().addResidualProcessedRecords(records.size());
                 publishRecords(records);
                 resultsFromWorkers.stream().forEach(ibrs -> ibrs.setIterationEndTime(System.currentTimeMillis())); 
             }
         }
     }
 
-    private void handleResidualBytesInBuffer(InputBufferReadStatus resultsFromWorker) throws IOException {
+    private void 
+    handleResidualBytesInBuffer(InputBufferReadStatus resultsFromWorker, 
+                                boolean lastIteration) throws IOException {
         var residualsHandler = new ResidualBufferBytesHandler
         (this.serviceContext.getRecordDescriptor().getRecordSeparator(), 
             this.serviceContext.getInputFileInformation().getFileType());
 
         this.leftOversFromPreviousIteration = 
             residualsHandler.processResiduals
-            (resultsFromWorker, this.leftOversFromPreviousIteration);
+            (resultsFromWorker, this.leftOversFromPreviousIteration, lastIteration);
     
         List<ByteArrayOutputStream> residualRecords = residualsHandler.getResidualRecords();
-    
+        resultsFromWorker.getIterationStatistics().addResidualProcessedBytes(
+            residualRecords.stream().mapToInt(ByteArrayOutputStream::size).sum());
         // format and publish residual records
         if(!residualRecords.isEmpty()) {
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
             List<InputEntity> records = formatter.format(residualRecords);
             if(records != null) {
-                logger.info("Got {} residual records from Formatter.", records.size());
+                resultsFromWorker.getIterationStatistics().addResidualProcessedRecords(records.size());
                 // publish the parsed records.
                 publishRecords(records); 
                 resultsFromWorker.setIterationEndTime(System.currentTimeMillis());
@@ -368,7 +413,6 @@ public class Reader {
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
-                //kafkaPublisher.publish(records, true);
                 kafkaPublisher.publishGenericRecord(records);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

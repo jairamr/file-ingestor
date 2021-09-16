@@ -10,7 +10,6 @@ import javax.json.JsonObject;
 
 import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.common.AllEnums.FileTypes;
-import com.minimalism.shared.domain.IntakeStats;
 import com.minimalism.shared.domain.ServiceConfiguration;
 import com.minimalism.shared.exceptions.FileTypeNotSupportedException;
 import com.minimalism.shared.exceptions.InvalidFileException;
@@ -29,7 +28,6 @@ public class IngestorContext {
     InputFileInformation inputFileInformation;
     RecordDescriptor recordDescriptor;
     ServiceConfiguration serviceConfiguration;
-    private IntakeStats intakeStats;
     private Schema avroSchema;
     
     public IngestorContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
@@ -52,6 +50,7 @@ public class IngestorContext {
         this.recordName = recordName;
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName, recordName);
     }
+    
     public String getClientName() {
         return this.clientName;
     }
@@ -62,6 +61,10 @@ public class IngestorContext {
 
     public String getRecordName() {
         return this.recordName;
+    }
+
+    public ServiceConfiguration getServiceConfiguration() {
+        return this.serviceConfiguration;
     }
 
     public InputFileInformation getInputFileInformation() {

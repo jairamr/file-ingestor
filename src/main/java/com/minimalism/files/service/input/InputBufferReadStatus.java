@@ -1,6 +1,6 @@
 package com.minimalism.files.service.input;
 
-import com.minimalism.files.domain.output.IterationStatistics;
+import com.minimalism.shared.domain.IterationStatistics;
 
 public class InputBufferReadStatus {
     private IterationStatistics iterationStatistics; 
@@ -8,10 +8,6 @@ public class InputBufferReadStatus {
     private long bufferOffsetInFile;
     private int numberOfBuffers;
     private int bufferNumber;
-    private long iterationStartTime;
-    private long parsingEndTime;
-    private long publishingEndTime;
-    private long iterationEndTime;
     private byte[] unprocessedPreamble;
     private byte[] unprocessedPostamble;
     boolean error;
@@ -193,28 +189,17 @@ public class InputBufferReadStatus {
         this.e = e;
         this.error = true;
     }
-    public long getIterationStartTime() {
-        return this.iterationStartTime;
+    public long getIterationDuration() {
+        return this.getIterationStatistics().getIterationDuration();
     }
-    public void setIterationStartTime(long startTime) {
-        this.iterationStartTime = startTime;
+    public void getParsingDuration() {
+        this.getIterationStatistics().getParsingDuration();
     }
-    public void setParsingEndTime(long parsingEndTime) {
-        this.parsingEndTime = parsingEndTime;
+    public void getPublishingDuration() {
+        this.getIterationStatistics().getPublishingDuration();
     }
-    public void setPublishingEndTime(long publishingEndTime) {
-        this.publishingEndTime = publishingEndTime;
-    }
-    public long getIterationEndTime() {
-        return this.iterationEndTime;
-    }
-    public void setIterationEndTime(long endTime) {
-        this.iterationEndTime = endTime;
-        this.iterationStatistics.setParsingDuration((int)(this.parsingEndTime - this.iterationStartTime));
-        this.iterationStatistics.setPublishingDuration((int)(this.publishingEndTime - this.parsingEndTime));
-    }
-    public long getIterationTime() {
-        return this.iterationStatistics.getProcessingDuration();
+    public void setIterationEndTime(long iterationEndTime) {
+        this.getIterationStatistics().setIterationEndTime(iterationEndTime);
     }
     /** 
      * @return String
@@ -237,7 +222,7 @@ public class InputBufferReadStatus {
             "and an unprocessed postamble of: %d bytes", this.iterationStatistics.getThreadName(), 
             bufferNumber, this.iterationStatistics.getIterationNumber(), 
             this.iterationStatistics.getProcessedBytes(), this.iterationStatistics.getProcessedRecords(), 
-            this.getIterationTime(), preBytes, postBytes);
+            this.getIterationDuration(), preBytes, postBytes);
         } else {
             returnValue = String.format("Thread with id: %d aborted with an error. The exception: %s occurred " + 
             "with a message: '", this.iterationStatistics.getWorkerId(), 
