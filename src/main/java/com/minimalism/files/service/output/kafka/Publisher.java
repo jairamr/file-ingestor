@@ -47,12 +47,12 @@ public class Publisher implements IPublish {
         props.put("retries", this.configuration.getPublisherRetries());
         props.put("linger.ms", this.configuration.getPublisherLingerMilliseconds());
         props.put("batch.size", this.configuration.getPublisherBatchSize());
-        props.put("auto.register.schemas", this.configuration.autoRegisterSchemas());
+        props.put("auto.register.schemas", this.configuration.getAutoRegisterSchemasFlag());
         props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
         //props.put("key.serializer", this.configuration.getPublisherKeySerializer());
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         
-        props.put("value.serializer", this.configuration.getPublisherValueSerializer());
+        props.put("value.serializer", this.configuration.getValueSerializer());
         
         if(this.avroSchema == null) {
             InputEntity forSchema = records.get(0);
@@ -82,10 +82,10 @@ public class Publisher implements IPublish {
         props.put("retries", this.configuration.getPublisherRetries());
         props.put("linger.ms", this.configuration.getPublisherLingerMilliseconds());
         props.put("batch.size", this.configuration.getPublisherBatchSize());
-        props.put("auto.register.schemas", this.configuration.autoRegisterSchemas());
+        props.put("auto.register.schemas", this.configuration.getAutoRegisterSchemasFlag());
         props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
-        props.put("key.serializer", this.configuration.getPublisherKeySerializer());
-        props.put("value.serializer", this.configuration.getPublisherValueSerializer());
+        props.put("key.serializer", this.configuration.getKeySerializer());
+        props.put("value.serializer", this.configuration.getValueSerializer());
         
         long start = System.currentTimeMillis();
                     

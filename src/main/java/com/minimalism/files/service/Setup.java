@@ -22,7 +22,7 @@ public class Setup {
             clientName = clientName.replace(" ", "_");
         }
         
-        Path clientDirectory = FileSystemConfigHelper.getInstance().getServiceClientRoottDirectory(clientName);
+        Path clientDirectory = FileSystemConfigHelper.getInstance().getServiceClientRootDirectory(clientName);
         if(!Files.exists(clientDirectory)) {
             InputOutputFileSystem.createFileSystem(clientName);
         }
