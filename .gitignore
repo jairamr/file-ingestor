@@ -12,3 +12,23 @@ src/main/resources/Hr1m.csv
 =======
 >>>>>>> master
 .vscode/launch.json
+target/surefire-reports/com.minimalism.AppTest.txt
+target/surefire-reports/com.minimalism.common.AppConfigHelperTests.txt
+target/surefire-reports/com.minimalism.files.domain.entities.EntityTests.txt
+target/surefire-reports/com.minimalism.files.domain.entities.FieldTests.txt
+target/surefire-reports/com.minimalism.files.domain.input.IngestorContextTests.txt
+target/surefire-reports/com.minimalism.files.domain.SystemRecourcesTests.txt
+target/surefire-reports/com.minimalism.files.InputOutputFileSystemTests.txt
+target/surefire-reports/com.minimalism.files.service.OutputRecordSchemaGeneratorTests.txt
+target/surefire-reports/com.minimalism.files.service.RecordDescriptorReaderTests.txt
+target/surefire-reports/TEST-com.minimalism.AppTest.xml
+target/surefire-reports/TEST-com.minimalism.common.AppConfigHelperTests.xml
+target/surefire-reports/TEST-com.minimalism.files.domain.entities.EntityTests.xml
+target/surefire-reports/TEST-com.minimalism.files.domain.entities.FieldTests.xml
+target/surefire-reports/TEST-com.minimalism.files.domain.input.IngestorContextTests.xml
+target/surefire-reports/TEST-com.minimalism.files.domain.SystemRecourcesTests.xml
+target/surefire-reports/TEST-com.minimalism.files.InputOutputFileSystemTests.xml
+target/surefire-reports/TEST-com.minimalism.files.service.OutputRecordSchemaGeneratorTests.xml
+target/surefire-reports/TEST-com.minimalism.files.service.RecordDescriptorReaderTests.xml
+target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst

@@ -10,7 +10,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.minimalism.shared.common.AllEnums.DataTypes;
-
+/**
+ * The <em>InputField</em> describes a field in the <em>InputRecord</em>. It allows 
+ * for basic validation of the field - the type of the value is as indicated, the 
+ * string representation of value is between min and max (string) length and a non-nullable
+ * field does not have a null value. 
+ */
 public class InputField {
     private static short TYPE_BIT = 3;
     private static short MIN_LENGTH_BIT = 2;
@@ -31,6 +36,7 @@ public class InputField {
      */
     public String getName() {
         return name;
+        
     }
     
     /** 
@@ -122,9 +128,9 @@ public class InputField {
      */
     public void setValue(Object value) {
         flags.set(TYPE_BIT, value.getClass().getTypeName().equals(this.typeName));
-        flags.set(MIN_LENGTH_BIT, value.toString().length() >= this.minimumLength);
-        flags.set(MAX_LENGTH_BIT, value.toString().length() <= this.maximumLength);
-        flags.set(NULL_VALUE_BIT, !this.nullable ? (value != null) : value == null);
+        flags.set(MIN_LENGTH_BIT, value.toString().length() <= this.minimumLength);
+        flags.set(MAX_LENGTH_BIT, value.toString().length() >= this.maximumLength);
+        flags.set(NULL_VALUE_BIT, value == null);
 
         Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
         var sValue = value.toString();
