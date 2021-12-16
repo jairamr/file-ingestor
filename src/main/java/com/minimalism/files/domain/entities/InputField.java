@@ -1,5 +1,6 @@
 package com.minimalism.files.domain.entities;
 
+import java.math.BigDecimal;
 import java.util.BitSet;
 import java.util.Objects;
 
@@ -126,10 +127,10 @@ public class InputField {
     /** 
      * @param value
      */
-    public void setValue(Object value) {
+    public void setValue(Object value) throws ClassCastException, NumberFormatException {
         flags.set(TYPE_BIT, value.getClass().getTypeName().equals(this.typeName));
-        flags.set(MIN_LENGTH_BIT, value.toString().length() <= this.minimumLength);
-        flags.set(MAX_LENGTH_BIT, value.toString().length() >= this.maximumLength);
+        flags.set(MIN_LENGTH_BIT, value.toString().length() >= this.minimumLength);
+        flags.set(MAX_LENGTH_BIT, value.toString().length() <= this.maximumLength);
         flags.set(NULL_VALUE_BIT, value == null);
 
         Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
@@ -140,7 +141,7 @@ public class InputField {
                 this.value = Boolean.valueOf(sValue);
             break;
             case "Currency":
-                this.value = sValue;
+                this.value = new BigDecimal(sValue);
             break;
             case "LocalDate":
                 // DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;

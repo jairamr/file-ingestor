@@ -5,14 +5,21 @@ import java.util.Objects;
 import javax.json.Json;
 import javax.json.JsonObject;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.minimalism.shared.common.AllEnums.DataTypes;
 
 public class FieldDescriptor {
+    @JsonProperty("field-name")
     private String fieldName;
     private short position;
+    @JsonProperty("data-type")
     private DataTypes dataType;
+    @JsonProperty("minimum-length")
     private short minimumLength;
+    @JsonProperty("maximum-length")
     private short maximumLength;
+    @JsonProperty("null-allowed")
     private boolean nullAllowed;
 
     public FieldDescriptor() {}
@@ -80,6 +87,10 @@ public class FieldDescriptor {
      */
     public void setDatatype(DataTypes dataType) {
         this.dataType = dataType;
+    }
+    @JsonSetter("data-type")
+    public void setDatatype(String dataType) {
+        this.dataType = Enum.valueOf(DataTypes.class, dataType);
     }
     
     /** 

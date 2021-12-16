@@ -3,6 +3,13 @@ package com.minimalism.files.domain.input;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.minimalism.shared.common.AllEnums.RecordTypes;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -11,11 +18,19 @@ public class RecordDescriptor {
     private static char CR = '\r';
     private static char LF = '\n';
     private String recordName;
+    @JsonProperty("record-type")
     private RecordTypes recordType;
+    @JsonProperty("field-separator")
     private byte fieldSeperator;
+    @JsonProperty("record-separator")
     private byte[] recordSeparator;
+    @JsonProperty("date-format")
+    private String dateFormat;
+    @JsonProperty("field-descriptors")
     private List<FieldDescriptor> fieldDescriptors;
+    @JsonProperty("entity-classname")
     private String entityClassName;
+    @JsonProperty("target-domain-classname")
     private String targetDomainClassName;
 
     public RecordDescriptor() {
@@ -49,6 +64,7 @@ public class RecordDescriptor {
     /** 
      * @return RecordTypes
      */
+    @JsonGetter("record-type")
     public RecordTypes getRecordType() {
         return recordType;
     }
@@ -61,7 +77,8 @@ public class RecordDescriptor {
     /** 
      * @param recordType
      */
-    public void setRecordType(String recordType) {
+    @JsonSetter("record-type")
+     public void setRecordType(String recordType) {
         this.recordType = Enum.valueOf(RecordTypes.class, recordType);
     }
     /** 
@@ -74,6 +91,7 @@ public class RecordDescriptor {
     /** 
      * @return String
      */
+    @JsonGetter("field-separator")
     public String getFieldSeparatorAsString() {
         var fsAsArray = new byte[1];
         fsAsArray[0] = this.fieldSeperator;
@@ -85,9 +103,14 @@ public class RecordDescriptor {
     public void setFieldSeperator(byte fieldSeperator) {
         this.fieldSeperator = fieldSeperator;
     }
+    @JsonSetter("field-separator")
+    public void setFieldSeperator(String fieldSeperator) {
+        this.fieldSeperator = fieldSeperator.getBytes()[0];
+    }
     /** 
      * @return byte[]
      */
+    @JsonGetter("record-separator")
     public byte[] getRecordSeparator() {
         return recordSeparator;
     }
@@ -97,18 +120,47 @@ public class RecordDescriptor {
     public void setRecordSeparator(byte[] recordSeparators) {
         this.recordSeparator = recordSeparators;
     }
+    @JsonSetter("record-separator")
+    public void setRecordSeparator(String recordSeparators) {
+        if(recordSeparators.equalsIgnoreCase("CRLF")) {
+            this.recordSeparator = new byte[2];
+            this.recordSeparator[0] = '\r';
+            this.recordSeparator[1] = '\n';
+        } else if(recordSeparators.equalsIgnoreCase("LF")) {
+            this.recordSeparator = new byte[1];
+            this.recordSeparator[0] = '\n';
+        } else {
+            this.recordSeparator = new byte[recordSeparators.length()];
+            this.recordSeparator = recordSeparators.getBytes();
+        }
+    }
+    @JsonGetter("date-format")
+    public String getDateFormat() {
+        return this.dateFormat;
+    }
+    @JsonSetter("date-format")
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
     /** 
      * @return Set<FieldDescriptor>
      */
+    @JsonGetter("field-descriptors")
     public List<FieldDescriptor> getFieldDescriptors() {
         return fieldDescriptors;
     }
     /** 
      * @param fieldDescriptors
      */
+    @JsonSetter("field-descriptors")
     public void setFieldDescriptors(List<FieldDescriptor> fieldDescriptors) {
         this.fieldDescriptors = fieldDescriptors;
     }
+    //@JsonSetter("field-descriptors")
+    // public void setFieldDescriptors(String fieldDescriptors) throws JsonMappingException, JsonProcessingException {
+    //     ObjectMapper mapper = new ObjectMapper();
+    //     this.fieldDescriptors = mapper.readValue(fieldDescriptors, new TypeReference<List<FieldDescriptor>>(){});
+    // }
     /** 
      * @param descriptor
      */

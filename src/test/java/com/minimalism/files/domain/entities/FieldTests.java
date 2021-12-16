@@ -2,18 +2,24 @@ package com.minimalism.files.domain.entities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Currency;
 import java.util.Locale;
 
 import javax.json.JsonObject;
 
+import com.minimalism.shared.common.AllEnums.DataTypes;
+
 import org.junit.jupiter.api.Test;
 
-public class FieldTests {
+class FieldTests {
     @Test
     void testEquals_for_same_instance() {
         InputField iut = new InputField();
@@ -25,20 +31,7 @@ public class FieldTests {
         iut.setPosition((short)0);
         iut.setValue("20362");
         InputField other = iut;
-        assertTrue(iut.equals(other));
-    }
-    @Test
-    void testEquals_fails_for_same_other_instance() {
-        InputField iut = new InputField();
-        iut.setName("EmpId");
-        iut.setType("String");
-        iut.setMaximumLength((short)10);
-        iut.setMaximumLength((short)6);
-        iut.setNullable(false);
-        iut.setPosition((short)0);
-        iut.setValue("20362");
-        String other = "This is a sample string";
-        assertFalse(iut.equals(other));
+        assertEquals(iut, other);
     }
     @Test
     void testEquals_for_same_values() {
@@ -60,7 +53,7 @@ public class FieldTests {
         iut2.setPosition((short)0);
         iut2.setValue("20362");
         
-        assertTrue(iut1.equals(iut2));
+        assertEquals(iut1, iut2);
     }
 
     @Test
@@ -86,89 +79,64 @@ public class FieldTests {
         assertEquals(23, lt.getHour());
         
     }
-
     @Test
-    void testGetMaximumLength() {
-
+    void testSetValue_boolean_true() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.BOOLEAN.getTypeName());
+        iut.setValue(Boolean.valueOf(true));
+        assertEquals(Boolean.class.getSimpleName(), iut.getTypeName());
+        assertEquals(Boolean.valueOf(true), iut.getValue());
     }
-
     @Test
-    void testGetMinimumLength() {
-
+    void testSetValue_boolean_false() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.BOOLEAN.getTypeName());
+        iut.setValue(Boolean.valueOf(false));
+        assertEquals(Boolean.class.getSimpleName(), iut.getTypeName());
+        assertEquals(Boolean.valueOf(false), iut.getValue());
     }
-
     @Test
-    void testGetName() {
-
+    void testSetValue_currency_input_as_string() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.CURRENCY.getTypeName());
+        iut.setValue("200.83");
+        assertEquals(Currency.class.getSimpleName(), iut.getTypeName());
+        assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
     }
-
     @Test
-    void testGetPosition() {
-
+    void testSetValue_currency_input_as_big_decimal() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.CURRENCY.getTypeName());
+        iut.setValue(new BigDecimal("200.83"));
+        assertEquals(Currency.class.getSimpleName(), iut.getTypeName());
+        assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
     }
-
     @Test
-    void testGetTypeName() {
-
+    void testSetValue_currency_input_as_double() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.CURRENCY.getTypeName());
+        iut.setValue(200.83d);
+        assertEquals(Currency.class.getSimpleName(), iut.getTypeName());
+        assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
     }
-
     @Test
-    void testGetValue() {
-
+    void testSetValue_currency_input_as_float() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.CURRENCY.getTypeName());
+        iut.setValue(200.83f);
+        assertEquals(Currency.class.getSimpleName(), iut.getTypeName());
+        assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
     }
-
     @Test
-    void testHashCode() {
-
+    void testSetValue_local_date_input_as_string() {
+        InputField iut = new InputField();
+        iut.setType(DataTypes.LOCALDATE.getTypeName());
+        iut.setValue("2020-12-14");
+        assertEquals(LocalDate.class.getSimpleName(), iut.getTypeName());
+        assertEquals("2020-12-14", iut.getValue());
     }
-
-    @Test
-    void testIsNullable() {
-
-    }
-
     @Test
     void testIsValid() {
-
-    }
-
-    @Test
-    void testSetMaximumLength() {
-
-    }
-
-    @Test
-    void testSetMinimumLength() {
-
-    }
-
-    @Test
-    void testSetName() {
-
-    }
-
-    @Test
-    void testSetNullable() {
-
-    }
-
-    @Test
-    void testSetPosition() {
-
-    }
-
-    @Test
-    void testSetType() {
-
-    }
-
-    @Test
-    void testSetValue() {
-
-    }
-
-    @Test
-    void testToString() {
 
     }
 }
