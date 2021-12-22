@@ -22,7 +22,7 @@ public class EntityBuilder {
     public static InputEntity build(String inputRecord, RecordDescriptor recordDescriptor) {
         var domainEntity = new InputEntity(recordDescriptor.getEntityClassName(),
         recordDescriptor.getTargetDomainClassName(), recordDescriptor.getFieldDescriptors().size());
-        
+
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
         for(var i = 0; i < fieldDescriptions.size(); i++ ) {
             domainEntity.addField(buildField(fieldDescriptions.get(i)));

@@ -3,6 +3,7 @@ package com.minimalism.files.service;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import javax.json.JsonObject;
 
@@ -23,7 +24,7 @@ class OutputRecordSchemaGeneratorTests {
             result = OutputRecordSchemaGenerator.createAvroSchema("Client_1", hrRecordDescriptor, "HrData");
             assertNotNull(result);
             System.out.println(result.toString());
-        } catch (IOException | NoSuchPathException e) {
+        } catch (IOException | NoSuchPathException | URISyntaxException e) {
             e.printStackTrace();
         }
     }

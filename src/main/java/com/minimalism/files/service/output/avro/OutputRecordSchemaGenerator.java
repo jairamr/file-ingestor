@@ -1,6 +1,7 @@
 package com.minimalism.files.service.output.avro;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.StandardOpenOption;
@@ -23,8 +24,9 @@ public class OutputRecordSchemaGenerator {
      * @return JsonObject
      * @throws NoSuchPathException
      * @throws IOException
+     * @throws URISyntaxException
      */
-    public static JsonObject createAvroSchema(String clientName, RecordDescriptor inputRecordDescriptor, String recordName) throws IOException, NoSuchPathException {
+    public static JsonObject createAvroSchema(String clientName, RecordDescriptor inputRecordDescriptor, String recordName) throws IOException, NoSuchPathException, URISyntaxException {
         
         // create an Entity object basedon the record description
         InputEntity sampleEntity = EntityBuilder.build(inputRecordDescriptor);

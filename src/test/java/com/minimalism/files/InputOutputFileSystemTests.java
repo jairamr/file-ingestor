@@ -2,6 +2,7 @@ package com.minimalism.files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import com.minimalism.shared.common.AllEnums.Directories;
 import com.minimalism.shared.exceptions.NoSuchPathException;
@@ -19,6 +20,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
     
@@ -31,6 +34,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -53,6 +58,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -64,6 +71,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -75,6 +84,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -86,6 +97,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -97,6 +110,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -108,6 +123,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -119,6 +136,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -130,6 +149,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -141,6 +162,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -152,6 +175,8 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 }

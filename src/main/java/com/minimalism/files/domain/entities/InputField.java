@@ -25,6 +25,7 @@ public class InputField {
     
     private String name;
     private String typeName;
+    private DataTypes datType;
     private short position;
     private boolean nullable;
     private short minimumLength;
@@ -59,6 +60,7 @@ public class InputField {
      */
     public void setType(String typeName) {
         this.typeName = typeName;
+        this.datType = Enum.valueOf(DataTypes.class, name.toUpperCase());
     }
     
     /** 
@@ -144,13 +146,6 @@ public class InputField {
                 this.value = new BigDecimal(sValue);
             break;
             case "LocalDate":
-                // DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-                // if(sValue.contains("/")) {
-                //     formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
-                // } else if(sValue.contains(" ")) {
-                //     formatter = DateTimeFormatter.ofPattern("M d yyyy");
-                // }
-                // this.value = LocalDate.parse(sValue, formatter);
                 this.value = sValue;
             break;
             case "String":
@@ -169,8 +164,6 @@ public class InputField {
                 this.value = Double.valueOf(sValue);
                 break;
             case "LocalTime":
-                // DateTimeFormatter timeformatter = DateTimeFormatter.ofPattern("h:m:s a", Locale.US);
-                // this.value = LocalTime.parse(sValue, timeformatter);
                 this.value= sValue;
             break;
             default:
@@ -221,8 +214,8 @@ public class InputField {
      */
     @JsonIgnore
     public boolean isValid() {
-        if(this.nullable)
-            return flags.cardinality() == 3 || flags.cardinality() == 4;
+        if(this.nullable && this.value == null)
+            return flags.cardinality() == 3;
         else
             return flags.cardinality() == 4;
 
@@ -254,5 +247,12 @@ public class InputField {
     @Override
     public String toString() {
         return this.value.toString();
+    }
+    private void setValidationStatus() {
+        flags.set(TYPE_BIT, this.value.getClass().getTypeName().equals(this.typeName));
+        flags.set(MIN_LENGTH_BIT, this.value.toString().length() >= this.minimumLength);
+        flags.set(MAX_LENGTH_BIT, this.value.toString().length() <= this.maximumLength);
+        flags.set(NULL_VALUE_BIT, this.value == null);
+
     }
 }

@@ -2,6 +2,7 @@ package com.minimalism.files.service.input;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -32,7 +33,7 @@ public class CSVFileReader implements IFileReader{
     private Map<Integer, ByteBuffer> recordsFromFile;
     private MappedByteBuffer mbb;
 
-    public CSVFileReader(int workerId, IngestorContext context, int bufferSize) throws NoSuchPathException {
+    public CSVFileReader(int workerId, IngestorContext context, int bufferSize) throws NoSuchPathException, URISyntaxException {
         this.id = workerId;
         this.serviceContext = context;
         this.bufferSize = bufferSize;
@@ -257,7 +258,7 @@ public class CSVFileReader implements IFileReader{
         return recordStart;
     }
     
-    private void setupOutput() throws NoSuchPathException{
+    private void setupOutput() throws NoSuchPathException, URISyntaxException{
         try {
             switch(this.serviceContext.getDestinationType()) {
                 case ACTIVE_MQ:

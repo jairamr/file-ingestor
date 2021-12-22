@@ -1,6 +1,7 @@
 package com.minimalism.files.domain;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -16,8 +17,9 @@ public class InputOutputFileSystem {
     /** 
      * @param clientName
      * @throws IOException
+     * @throws URISyntaxException
      */
-    public static void createFileSystem(String clientName) throws IOException {
+    public static void createFileSystem(String clientName) throws IOException, URISyntaxException {
         var root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());
         if(!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
             Files.createDirectory(root);
@@ -131,8 +133,9 @@ public class InputOutputFileSystem {
      * @return Path
      * @throws IOException
      * @throws NoSuchPathException
+     * @throws URISyntaxException
      */
-    public static Path getPathFor(String clientName, Directories directory) throws IOException, NoSuchPathException {
+    public static Path getPathFor(String clientName, Directories directory) throws IOException, NoSuchPathException, URISyntaxException {
         Path returnValue = null;
 
         Path root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());

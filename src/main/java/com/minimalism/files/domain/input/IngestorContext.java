@@ -1,6 +1,7 @@
 package com.minimalism.files.domain.input;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -30,7 +31,7 @@ public class IngestorContext {
     ServiceConfiguration serviceConfiguration;
     private Schema avroSchema;
     
-    public IngestorContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
+    public IngestorContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException, URISyntaxException {
         this.clientName = clientName;
         ClientConfigHelper configHelper = new ClientConfigHelper(clientName);
         this.serviceConfiguration = configHelper.getServiceConfiguration(clientName);
@@ -45,7 +46,7 @@ public class IngestorContext {
         
     }
 
-    public IngestorContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
+    public IngestorContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException, URISyntaxException {
         this(clientName, fileName);
         this.recordName = recordName;
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName, recordName);
@@ -87,7 +88,7 @@ public class IngestorContext {
         return this.avroSchema;
     }
 
-    private void buildInputFileInformation(String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException {
+    private void buildInputFileInformation(String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, URISyntaxException {
         FileTypes fileType = FileTypes.CSV;
         Path fullPath = null;
         String fileExtension = null;

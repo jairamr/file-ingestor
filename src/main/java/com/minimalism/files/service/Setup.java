@@ -1,12 +1,12 @@
 package com.minimalism.files.service;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.minimalism.files.domain.InputOutputFileSystem;
 import com.minimalism.shared.exceptions.NoSuchPathException;
-import com.minimalism.shared.service.AppConfigHelper;
 import com.minimalism.shared.service.FileSystemConfigHelper;
 
 public class Setup {
@@ -15,8 +15,9 @@ public class Setup {
      * @param clientName
      * @throws IOException
      * @throws NoSuchPathException
+     * @throws URISyntaxException
      */
-    public void register(String clientName) throws IOException, NoSuchPathException {
+    public void register(String clientName) throws IOException, NoSuchPathException, URISyntaxException {
         //get rid of <sp>s in client name
         if(clientName.contains(" ")) {
             clientName = clientName.replace(" ", "_");

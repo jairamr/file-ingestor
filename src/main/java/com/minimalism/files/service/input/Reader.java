@@ -2,6 +2,7 @@ package com.minimalism.files.service.input;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class Reader {
     BrokerConfiguration brokerConfiguration;
     IngestServiceSummary ingestionSummary;
 
-    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException, IOException {
+    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException, IOException, URISyntaxException {
         serviceContext = context;
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
         var slicer = new Slicer();
@@ -66,7 +67,7 @@ public class Reader {
         setupOutput();
     }
 
-    public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException, RecordDescriptorException {
+    public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException, RecordDescriptorException, URISyntaxException {
         
         // We expect the filename is the input file that must be processed. It must have a file name and
         // an extension
@@ -82,7 +83,7 @@ public class Reader {
         setupOutput();
     }
 
-    public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException, RecordDescriptorException {
+    public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException, RecordDescriptorException, URISyntaxException {
         this(clientName, Paths.get(path).resolve(fileName).toString(), headerPresent);
     }
     
@@ -113,8 +114,9 @@ public class Reader {
      * @throws InterruptedException
      * @throws NoSuchPathException
      * @throws ServiceAbortedException
+     * @throws URISyntaxException
      */
-    public void read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException {
+    public void read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException, URISyntaxException {
         logger.info("Reading input file: {}", this.serviceContext.getInputFileInformation().getFilePath());
 
         if(this.serviceContext.getInputFileInformation().getFileType() == FileTypes.CSV) {
@@ -137,8 +139,9 @@ public class Reader {
      * @throws IOException
      * @throws NoSuchPathException
      * @throws ServiceAbortedException
+     * @throws URISyntaxException
      */
-    private void processFile(FileTypes fileType) throws IOException, NoSuchPathException, ServiceAbortedException {
+    private void processFile(FileTypes fileType) throws IOException, NoSuchPathException, ServiceAbortedException, URISyntaxException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;
@@ -212,8 +215,9 @@ public class Reader {
      * @throws InterruptedException
      * @throws NoSuchPathException
      * @throws ServiceAbortedException
+     * @throws URISyntaxException
      */
-    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
+    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException, URISyntaxException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;
@@ -364,9 +368,10 @@ public class Reader {
      * @param iteration
      * @return List<Callable<InputBufferReadStatus>>
      * @throws NoSuchPathException
+     * @throws URISyntaxException
      */
     private List<Callable<InputBufferReadStatus>> prepareWorkers(FileTypes fileType, 
-                                                    long thisBatchOffsetInFile, int iteration) throws NoSuchPathException {
+                                                    long thisBatchOffsetInFile, int iteration) throws NoSuchPathException, URISyntaxException {
         List<Callable<InputBufferReadStatus>> returnValue = new ArrayList<>();
 
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
@@ -382,7 +387,7 @@ public class Reader {
         return returnValue;
     }
 
-    private Callable<InputBufferReadStatus> prepareWorker(FileTypes fileType, long thisBatchOffsetInFile, int iteration) throws NoSuchPathException {
+    private Callable<InputBufferReadStatus> prepareWorker(FileTypes fileType, long thisBatchOffsetInFile, int iteration) throws NoSuchPathException, URISyntaxException {
         Callable<InputBufferReadStatus> returnValue = null;
 
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
@@ -420,7 +425,7 @@ public class Reader {
         }
     }
 
-    private void setupOutput() throws NoSuchPathException{
+    private void setupOutput() throws NoSuchPathException, URISyntaxException{
         try {
             switch(this.serviceContext.getDestinationType()) {
                 case ACTIVE_MQ:
