@@ -16,14 +16,14 @@ import com.minimalism.shared.exceptions.NoSuchPathException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class IngestorContextTests {
+class IngestorContextTests {
     private static IngestorContext iut;
     @BeforeAll
-    static void init() throws URISyntaxException {
+    static void init() {
         try {
             iut = new IngestorContext("client_1", "_HrData_Kaggle_Hr10t.csv");
         } catch (IOException | FileTypeNotSupportedException | InvalidFileException | NoSuchPathException
-                | RecordDescriptorException e) {
+                | RecordDescriptorException | URISyntaxException e) {
             e.printStackTrace();
         }
     }
@@ -51,11 +51,11 @@ public class IngestorContextTests {
     void testGetInputFileInformation() {
         InputFileInformation fileInfo = iut.getInputFileInformation();
         System.out.println(fileInfo.getDirectory());
-        assertEquals("C:\\Users\\jaira\\FileSliceAndDice\\client_1\\input\\csv", fileInfo.getDirectory().toString());
-        assertEquals(".csv", fileInfo.getFileExtension());
-        assertEquals("_HrData_Kaggle_Hr10t.csv", fileInfo.getFileName());
-        assertEquals("C:\\Users\\jaira\\FileSliceAndDice\\client_1\\input\\csv\\_HrData_Kaggle_Hr10t.csv", fileInfo.getFilePath().toString());
-        assertEquals(4096*1024, fileInfo.getFileSize());
+        assertEquals("C:\\Users\\jaira\\FileSliceAndDice\\clients\\client_1\\input\\csv", fileInfo.getDirectory().toString());
+        assertEquals("csv", fileInfo.getFileExtension());
+        assertEquals("_HrData_Kaggle_Hr10t", fileInfo.getFileName());
+        assertEquals("C:\\Users\\jaira\\FileSliceAndDice\\clients\\client_1\\input\\csv\\_HrData_Kaggle_Hr10t.csv", fileInfo.getFilePath().toString());
+        assertEquals(2788098, fileInfo.getFileSize());
         assertEquals(FileTypes.CSV, fileInfo.getFileType());
         //assertEquals(FileTime.from(1629217388, TimeUnit.SECONDS), fileInfo.getFileTimestamp());
         

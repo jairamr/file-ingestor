@@ -19,7 +19,7 @@ public class InputOutputFileSystem {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static void createFileSystem(String clientName) throws IOException, URISyntaxException {
+    public static void createFileSystem(String clientName) throws IOException {
         var root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());
         if(!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
             Files.createDirectory(root);
@@ -102,8 +102,6 @@ public class InputOutputFileSystem {
             Files.createDirectory(archiveOutputBinDirectoryPath);
         }
     }
-
-    
     /** 
      * @param clientName
      * @return Path
@@ -135,7 +133,7 @@ public class InputOutputFileSystem {
      * @throws NoSuchPathException
      * @throws URISyntaxException
      */
-    public static Path getPathFor(String clientName, Directories directory) throws IOException, NoSuchPathException, URISyntaxException {
+    public static Path getPathFor(String clientName, Directories directory) throws IOException, NoSuchPathException {
         Path returnValue = null;
 
         Path root = Paths.get(AppConfigHelper.getInstance().getServiceRootDirectory().toString());

@@ -1,6 +1,9 @@
 package com.minimalism.files.domain.entities;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.BitSet;
 import java.util.Objects;
 
@@ -25,14 +28,32 @@ public class InputField {
     
     private String name;
     private String typeName;
-    private DataTypes datType;
     private short position;
     private boolean nullable;
     private short minimumLength;
     private short maximumLength;
     private Object value;
     private BitSet flags = new BitSet(4);
+    private String dateFormat;
+    private String timeFormat;
 
+    public InputField() {
+        this.dateFormat = "yyyy-MM-dd";
+        this.timeFormat = "HH:mm:ss";
+    }
+
+    public InputField(String dateFormat, String timeFormat) {
+        if(dateFormat != null && !dateFormat.isEmpty() && !dateFormat.isBlank()) {
+            this.dateFormat = dateFormat;
+        } else {
+            this.dateFormat = "yyyy-MM-dd";
+        }
+        if(timeFormat != null && !timeFormat.isEmpty() && !timeFormat.isBlank()) {
+            this.timeFormat = timeFormat;
+        } else {
+            this.timeFormat = "HH:mm:ss";
+        }
+    }
     /** 
      * @return String
      */
@@ -60,7 +81,6 @@ public class InputField {
      */
     public void setType(String typeName) {
         this.typeName = typeName;
-        this.datType = Enum.valueOf(DataTypes.class, name.toUpperCase());
     }
     
     /** 
@@ -129,50 +149,56 @@ public class InputField {
     /** 
      * @param value
      */
-    public void setValue(Object value) throws ClassCastException, NumberFormatException {
-        flags.set(TYPE_BIT, value.getClass().getTypeName().equals(this.typeName));
-        flags.set(MIN_LENGTH_BIT, value.toString().length() >= this.minimumLength);
-        flags.set(MAX_LENGTH_BIT, value.toString().length() <= this.maximumLength);
-        flags.set(NULL_VALUE_BIT, value == null);
-
-        Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
-        var sValue = value.toString();
-        
-        switch(targetType.getSimpleName()) {
-            case "Boolean":
-                this.value = Boolean.valueOf(sValue);
-            break;
-            case "Currency":
-                this.value = new BigDecimal(sValue);
-            break;
-            case "LocalDate":
-                this.value = sValue;
-            break;
-            case "String":
-                this.value = sValue;
-            break;
-            case "Float":
-                this.value = (Float)value;
-            break;
-            case "Integer":
-                this.value = Integer.valueOf(sValue);
-            break;
-            case "Long":
-                this.value = Long.valueOf(sValue);
-            break;
-            case "Double":
-                this.value = Double.valueOf(sValue);
+    public void setValue(Object value) throws NullPointerException, ClassCastException, NumberFormatException {
+        if(this.nullable && value == null) {
+            this.value = value;
+        } else {
+            Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
+            var sValue = value.toString();
+            
+            switch(targetType.getSimpleName()) {
+                case "Boolean":
+                    if(!(sValue.equalsIgnoreCase("true") || sValue.equalsIgnoreCase("false"))) {
+                        throw new NumberFormatException(String.format("Input value: %s is not a boolean value; only 'true' or 'false' are accepted.", sValue));
+                    }
+                    this.value = Boolean.valueOf(sValue);
                 break;
-            case "LocalTime":
-                this.value= sValue;
-            break;
-            default:
-                this.value = value;
-            break;
+                case "BigDecimal":
+                    this.value = new BigDecimal(sValue);
+                break;
+                case "LocalDate":
+                    DateTimeFormatter df = DateTimeFormatter.ofPattern(this.dateFormat);
+                    this.value = LocalDate.parse(sValue, df);
+                break;
+                case "String":
+                    this.value = sValue;
+                break;
+                case "Float":
+                    this.value = (Float)value;
+                break;
+                case "Integer":
+                    this.value = Integer.valueOf(sValue);
+                break;
+                case "Long":
+                    this.value = Long.valueOf(sValue);
+                break;
+                case "Double":
+                    this.value = Double.valueOf(sValue);
+                    break;
+                case "LocalTime":
+                    DateTimeFormatter tf = DateTimeFormatter.ofPattern(this.timeFormat);
+                    this.value = LocalTime.parse(sValue, tf);
+                break;
+                default:
+                    this.value = value;
+                break;
+            }
         }
+        setValidationStatus();
     }
 
     public JsonObject forAvroSchema() {
+
         String avroRulesName;
         String avroRulesTypeName;
         if(this.getName().contains("-")) {
@@ -182,8 +208,8 @@ public class InputField {
         }
         if(this.getTypeName().equals("Integer")) {
             avroRulesTypeName = "int";
-        } else if(this.getTypeName().equals("Currency")) {
-            avroRulesTypeName = "string";
+        } else if(this.getTypeName().equals("Character")) {
+            avroRulesTypeName = "char";
         } else if(this.getTypeName().equals("LocalDate")) {
             avroRulesTypeName = "string";
         } else if(this.getTypeName().equals("LocalTime")) {
@@ -214,10 +240,7 @@ public class InputField {
      */
     @JsonIgnore
     public boolean isValid() {
-        if(this.nullable && this.value == null)
-            return flags.cardinality() == 3;
-        else
-            return flags.cardinality() == 4;
+        return flags.cardinality() == 4;
 
     }
     
@@ -249,10 +272,16 @@ public class InputField {
         return this.value.toString();
     }
     private void setValidationStatus() {
-        flags.set(TYPE_BIT, this.value.getClass().getTypeName().equals(this.typeName));
-        flags.set(MIN_LENGTH_BIT, this.value.toString().length() >= this.minimumLength);
-        flags.set(MAX_LENGTH_BIT, this.value.toString().length() <= this.maximumLength);
-        flags.set(NULL_VALUE_BIT, this.value == null);
-
+        if(this.nullable && this.value == null) {
+            flags.set(TYPE_BIT, true);
+            flags.set(MIN_LENGTH_BIT, true);
+            flags.set(MAX_LENGTH_BIT, true);
+            flags.set(NULL_VALUE_BIT, true);
+        } else{
+            flags.set(TYPE_BIT, this.value.getClass().getSimpleName().equals(this.typeName));
+            flags.set(MIN_LENGTH_BIT, this.value.toString().length() >= this.minimumLength);
+            flags.set(MAX_LENGTH_BIT, this.value.toString().length() <= this.maximumLength);
+            flags.set(NULL_VALUE_BIT, this.value != null);
+        }
     }
 }

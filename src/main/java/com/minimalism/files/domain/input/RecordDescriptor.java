@@ -22,6 +22,8 @@ public class RecordDescriptor {
     private byte[] recordSeparator;
     @JsonProperty("date-format")
     private String dateFormat;
+    @JsonProperty("time-format")
+    private String timeFormat;
     @JsonProperty("field-descriptors")
     private List<FieldDescriptor> fieldDescriptors;
     @JsonProperty("entity-classname")
@@ -137,6 +139,14 @@ public class RecordDescriptor {
     @JsonSetter("date-format")
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
+    }
+    @JsonGetter("time-format")
+    public String getTimeFormat() {
+        return this.timeFormat;
+    }
+    @JsonSetter("time-format")
+    public void setTimeFormat(String timeFormat) {
+        this.timeFormat = timeFormat;
     }
     /** 
      * @return Set<FieldDescriptor>

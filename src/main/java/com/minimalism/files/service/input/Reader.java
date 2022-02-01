@@ -238,7 +238,7 @@ public class Reader {
                     resetWorkers(workers, thisBatchOffsetInFile, iteration);
                 }
                 List<Future<InputBufferReadStatus>> iterationResults = inputBufferReaderService.invokeAll(workers);
-                //process the outcome of each iteration
+                // process the outcome of each iteration
                 // actions are -> 
                 // 1. process residual bytes in each buffer
                 // 2. Split valid Records from invalid records

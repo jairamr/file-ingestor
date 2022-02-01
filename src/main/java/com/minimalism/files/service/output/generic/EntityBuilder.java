@@ -2,7 +2,6 @@ package com.minimalism.files.service.output.generic;
 
 import java.util.List;
 
-import com.minimalism.files.domain.entities.Employee;
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.entities.InputField;
 import com.minimalism.files.domain.input.FieldDescriptor;
@@ -25,7 +24,7 @@ public class EntityBuilder {
 
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
         for(var i = 0; i < fieldDescriptions.size(); i++ ) {
-            domainEntity.addField(buildField(fieldDescriptions.get(i)));
+            domainEntity.addField(buildField(fieldDescriptions.get(i), recordDescriptor.getDateFormat(), recordDescriptor.getTimeFormat()));
         }
         
         String[] fieldValues = inputRecord.split(recordDescriptor.getFieldSeparatorAsString().substring(0, 1));
@@ -41,22 +40,18 @@ public class EntityBuilder {
         
         List<FieldDescriptor> fieldDescriptions = recordDescriptor.getFieldDescriptors();
         for(var i = 0; i < fieldDescriptions.size(); i++ ) {
-            domainEntity.addField(buildField(fieldDescriptions.get(i)));
+            domainEntity.addField(buildField(fieldDescriptions.get(i), recordDescriptor.getDateFormat(), recordDescriptor.getTimeFormat()));
         }
         
         return domainEntity;
     }
 
-    public static Employee buildDomainObject(String inputRecord, RecordDescriptor recordDescriptor) {
-        return new Employee(recordDescriptor.getFieldSeparatorAsString(), inputRecord);
-    }
-    
     /** 
      * @param fieldDescriptor
      * @return Field
      */
-    private static InputField buildField(FieldDescriptor fieldDescriptor) {
-        var field = new InputField();
+    private static InputField buildField(FieldDescriptor fieldDescriptor, String dateFormat, String timeFormat) {
+        var field = new InputField(dateFormat, timeFormat);
         field.setName(fieldDescriptor.getFieldName());
         field.setPosition(fieldDescriptor.getPosition());
         field.setType(fieldDescriptor.getDatatype().getTypeName());
