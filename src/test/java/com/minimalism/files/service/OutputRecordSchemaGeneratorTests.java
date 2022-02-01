@@ -2,19 +2,30 @@ package com.minimalism.files.service;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
 import javax.json.JsonObject;
 
-import com.minimalism.files.domain.RecordDescriptor;
+import com.minimalism.files.domain.input.RecordDescriptor;
+import com.minimalism.files.exceptions.RecordDescriptorException;
+import com.minimalism.files.service.input.RecordDescriptorReader;
+import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 
 import org.junit.jupiter.api.Test;
 
-public class OutputRecordSchemaGeneratorTests {
+class OutputRecordSchemaGeneratorTests {
     @Test
-    void testCreateAvroSchema() {
-        RecordDescriptorReader reader = new RecordDescriptorReader();
-        RecordDescriptor hrRecordDescriptor = reader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
-        OutputRecordSchemaGenerator iut = new OutputRecordSchemaGenerator("Client_1");
-        JsonObject result = iut.createAvroSchema(hrRecordDescriptor, "HrData");
-        assertNotNull(result); 
+    void testCreateAvroSchema() throws RecordDescriptorException {
+        RecordDescriptor hrRecordDescriptor = RecordDescriptorReader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
+        JsonObject result;
+        try {
+            result = OutputRecordSchemaGenerator.createAvroSchema("Client_1", hrRecordDescriptor, "HrData");
+            assertNotNull(result);
+            System.out.println(result.toString());
+        } catch (IOException | NoSuchPathException | URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 }

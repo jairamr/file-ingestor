@@ -2,14 +2,15 @@ package com.minimalism.files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
-import com.minimalism.common.AllEnums.Directories;
+import com.minimalism.shared.common.AllEnums.Directories;
+import com.minimalism.shared.exceptions.NoSuchPathException;
 import com.minimalism.files.domain.InputOutputFileSystem;
-import com.minimalism.files.exceptions.NoSuchPathException;
 
 import org.junit.jupiter.api.Test;
 
-public class InputOutputFileSystemTests {
+class InputOutputFileSystemTests {
     @Test
     void testCreateFileSystem() {
         try {
@@ -31,7 +32,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -53,7 +54,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -64,7 +65,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -75,7 +76,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -97,7 +98,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -108,7 +109,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -119,7 +120,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -130,7 +131,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -141,7 +142,7 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 
     @Test
@@ -152,6 +153,6 @@ public class InputOutputFileSystemTests {
             System.out.println(ioe.getMessage());
         } catch (NoSuchPathException e) {
             System.out.println(e.getMessage());
-        }
+        } 
     }
 }

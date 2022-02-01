@@ -1,26 +1,20 @@
 package com.minimalism.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
+
+import com.minimalism.shared.service.AppConfigHelper;
 
 import org.junit.jupiter.api.Test;
 
 public class AppConfigHelperTests {
-    @Test
-    void testGetBufferSize() {
-        try {
-            assertEquals(1024*1024, AppConfigHelper.getInstance().getBufferSize());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Test
     void testGetInstance() {
         try {
-            assertTrue(AppConfigHelper.getInstance() != null);
+            assertNotNull(AppConfigHelper.getInstance());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -29,16 +23,7 @@ public class AppConfigHelperTests {
     @Test
     void testGetServiceRootDirectory() {
         try {
-            assertEquals("C:\\Users\\jaira\\FileSliceAndDice\\", AppConfigHelper.getInstance().getServiceRootDirectory());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void testGetThreadsLoadingFactor() {
-        try {
-            assertEquals(3, AppConfigHelper.getInstance().getThreadsLoadingFactor());
+            assertEquals("C:\\Users\\jaira\\FileSliceAndDice", AppConfigHelper.getInstance().getServiceRootDirectory().toString());
         } catch (IOException e) {
             e.printStackTrace();
         }

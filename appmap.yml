@@ -1,0 +1,19 @@
+name: file-ingestor
+packages:
+  - path: com.minimalism
+  - path: com.minimalism.common
+  - path: com.minimalism.files.domain
+  - path: com.minimalism.files.exception
+  - path: com.minimalism.files.service
+  - path: com.minimalism.files.service.input
+  - path: com.minimalism.files.service.output
+  - path: com.minimalism.files.service.output.avro
+  - path: com.minimalism.files.service.output.generic
+  - path: com.minimalism.files.service.output.kafka
+  
+  
+  
+  
+  
+  
+  

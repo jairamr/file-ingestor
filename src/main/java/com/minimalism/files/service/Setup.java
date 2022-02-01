@@ -1,13 +1,13 @@
 package com.minimalism.files.service;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.minimalism.common.AppConfigHelper;
-import com.minimalism.files.FileSystemConfigHelper;
 import com.minimalism.files.domain.InputOutputFileSystem;
-import com.minimalism.files.exceptions.NoSuchPathException;
+import com.minimalism.shared.exceptions.NoSuchPathException;
+import com.minimalism.shared.service.FileSystemConfigHelper;
 
 public class Setup {
     
@@ -15,15 +15,15 @@ public class Setup {
      * @param clientName
      * @throws IOException
      * @throws NoSuchPathException
+     * @throws URISyntaxException
      */
-    public void register(String clientName) throws IOException, NoSuchPathException {
+    public void register(String clientName) throws IOException, NoSuchPathException, URISyntaxException {
         //get rid of <sp>s in client name
         if(clientName.contains(" ")) {
-            clientName = clientName.replaceAll(" ", "_");
+            clientName = clientName.replace(" ", "_");
         }
         
-        Path root = AppConfigHelper.getInstance().getServiceRootDirectory();
-        Path clientDirectory = FileSystemConfigHelper.getInstance().getServiceClientRoottDirectory(clientName);
+        Path clientDirectory = FileSystemConfigHelper.getInstance().getServiceClientRootDirectory(clientName);
         if(!Files.exists(clientDirectory)) {
             InputOutputFileSystem.createFileSystem(clientName);
         }
