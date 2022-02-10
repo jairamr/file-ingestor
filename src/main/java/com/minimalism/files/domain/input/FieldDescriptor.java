@@ -90,7 +90,7 @@ public class FieldDescriptor {
     }
     @JsonSetter("data-type")
     public void setDatatype(String dataType) {
-        this.dataType = Enum.valueOf(DataTypes.class, dataType);
+        this.dataType = Enum.valueOf(DataTypes.class, dataType.toUpperCase());
     }
     
     /** 
@@ -134,7 +134,6 @@ public class FieldDescriptor {
     public void setNullAllowed(boolean nullAllowed) {
         this.nullAllowed = nullAllowed;
     }
-
     
     /** 
      * @return int

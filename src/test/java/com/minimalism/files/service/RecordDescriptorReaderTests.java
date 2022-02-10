@@ -151,7 +151,7 @@ class RecordDescriptorReaderTests {
         FieldDescriptor iut = hrRecordDescriptor.getFieldDescriptors().stream().filter(fd -> fd.getPosition() == 10).findFirst().orElse(null);
         assertEquals("dateOfBirth", iut.getFieldName());
         assertEquals(10, iut.getPosition());
-        assertEquals(DataTypes.LOCALDATE, iut.getDatatype());
+        assertEquals(DataTypes.LOCAL_DATE, iut.getDatatype());
         assertEquals(8, iut.getMinimumLength());
         assertEquals(15, iut.getMaximumLength());
         assertEquals(false, iut.isNullAllowed());
@@ -162,7 +162,7 @@ class RecordDescriptorReaderTests {
         FieldDescriptor iut = hrRecordDescriptor.getFieldDescriptors().stream().filter(fd -> fd.getPosition() == 11).findFirst().orElse(null);
         assertEquals("timeOfBirth", iut.getFieldName());
         assertEquals(11, iut.getPosition());
-        assertEquals(DataTypes.LOCALTIME, iut.getDatatype());
+        assertEquals(DataTypes.LOCAL_TIME, iut.getDatatype());
         assertEquals(10, iut.getMinimumLength());
         assertEquals(12, iut.getMaximumLength());
         assertEquals(true, iut.isNullAllowed());

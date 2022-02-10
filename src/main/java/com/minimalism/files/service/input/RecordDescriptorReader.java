@@ -1,7 +1,6 @@
 package com.minimalism.files.service.input;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,12 +56,13 @@ public class RecordDescriptorReader {
             if(recordDescriptor != null) {
                 recordDescriptor.setRecordName(descriptorFileName);
             }
-        } catch (NoSuchPathException | IOException | URISyntaxException e) {
+        } catch (NoSuchPathException | IOException e) {
             throw new RecordDescriptorException(String.format("Exception occurred while locating record description file for file: %s, record name: %s; message: %s", fileName, descriptorFileName, e.getMessage()));
         }
         
         return recordDescriptor;
     }
+
     public static RecordDescriptor readDefinition(String clientName, String fileName, String recordName) throws RecordDescriptorException {
         RecordDescriptor recordDescriptor = null;
         String descriptorFileName = null;
@@ -85,12 +85,13 @@ public class RecordDescriptorReader {
                 // descriptor file not found...
                 throw new RecordDescriptorException(String.format("Unable to find record description file for file: %s, record name: %s", fileName, recordName));
             }
-        } catch (NoSuchPathException | IOException | URISyntaxException e) {
+        } catch (NoSuchPathException | IOException e) {
             throw new RecordDescriptorException(String.format("Exception occurred while locating record description file for file: %s, record name: %s; message: %s", fileName, recordName, e.getMessage())); 
         }
         
         return recordDescriptor;
     }
+
     private static String sanitizeFileName(String fileName) {
         String sanitizedFileName = fileName;
         if(sanitizedFileName.contains("\\") || sanitizedFileName.contains("/")) {
@@ -104,12 +105,15 @@ public class RecordDescriptorReader {
         
         return sanitizedFileName;
     }
+
     private static RecordDescriptor parseJsonDescriptorFile(Path descriptorFile) throws IOException {
         return processRecordDescriptor(descriptorFile);
     }
+
     private static void parseYamlDescriptorFile(Path descriptorFile) {
         
     }
+
     private static RecordDescriptor processRecordDescriptor(Path recordDescriptionFile) throws IllegalArgumentException, IOException {
         try(var input = Files.newBufferedReader(recordDescriptionFile)) {
             ObjectMapper mapper = new ObjectMapper(); 

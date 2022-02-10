@@ -28,6 +28,7 @@ public class InputField {
     
     private String name;
     private String typeName;
+    private DataTypes dataType;
     private short position;
     private boolean nullable;
     private short minimumLength;
@@ -81,6 +82,15 @@ public class InputField {
      */
     public void setType(String typeName) {
         this.typeName = typeName;
+        this.dataType = Enum.valueOf(DataTypes.class, typeName);
+    }
+
+    public DataTypes getDataType() {
+        return this.dataType;
+    }
+
+    public void setDataType(DataTypes dataType) {
+        this.dataType = dataType;
     }
     
     /** 
@@ -153,10 +163,10 @@ public class InputField {
         if(this.nullable && value == null) {
             this.value = value;
         } else {
-            Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
+            //Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
             var sValue = value.toString();
             
-            switch(targetType.getSimpleName()) {
+            switch(this.getTypeName()) {
                 case "Boolean":
                     if(!(sValue.equalsIgnoreCase("true") || sValue.equalsIgnoreCase("false"))) {
                         throw new NumberFormatException(String.format("Input value: %s is not a boolean value; only 'true' or 'false' are accepted.", sValue));
@@ -174,7 +184,7 @@ public class InputField {
                     this.value = sValue;
                 break;
                 case "Float":
-                    this.value = (Float)value;
+                    this.value = Float.valueOf(sValue);
                 break;
                 case "Integer":
                     this.value = Integer.valueOf(sValue);

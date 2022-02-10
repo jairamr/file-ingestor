@@ -89,7 +89,7 @@ public class InputEntity implements IValidation {
     }
     
     /**
-     * Conveience meothod to add an attribute to the list of fields. The Record Descriptor indicates the 
+     * Conveience method to add an attribute to the list of fields. The Record Descriptor indicates the 
      * position of the field in the input record.
      * @param field - instance of <em>Field</em> class that is instantoated by the <em>InputRecordFormatter</em>.
      */
@@ -176,7 +176,7 @@ public class InputEntity implements IValidation {
     public List<InputField> invalids() {
         return this.fields.stream()
                             .filter(f -> !f.isValid())
-                            .collect(Collectors.toList());
+                            .toList();
     }
     
 }
