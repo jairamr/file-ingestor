@@ -7,7 +7,7 @@ src/main/resources/Hr1m.csv
 .settings/org.eclipse.jdt.core.prefs
 .settings/org.eclipse.jdt.core.prefs
 .sts4-cache/classpath-data.json
-*/target/**
+target/**
 
 =======
 >>>>>>> master
