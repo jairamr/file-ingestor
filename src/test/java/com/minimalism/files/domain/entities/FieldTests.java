@@ -112,7 +112,7 @@ class FieldTests {
     @Test
     void testSetValue_currency_input_as_string() {
         InputField iut = new InputField();
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue("200.83");
         assertEquals(BigDecimal.class.getSimpleName(), iut.getTypeName());
         assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
@@ -120,7 +120,7 @@ class FieldTests {
     @Test
     void testSetValue_currency_input_as_big_decimal() {
         InputField iut = new InputField();
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue(new BigDecimal("200.83"));
         assertEquals(BigDecimal.class.getSimpleName(), iut.getTypeName());
         assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
@@ -128,7 +128,7 @@ class FieldTests {
     @Test
     void testSetValue_currency_input_as_double() {
         InputField iut = new InputField();
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue(200.83d);
         assertEquals(BigDecimal.class.getSimpleName(), iut.getTypeName());
         assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
@@ -136,7 +136,7 @@ class FieldTests {
     @Test
     void testSetValue_currency_input_as_float() {
         InputField iut = new InputField();
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue(200.83f);
         assertEquals(BigDecimal.class.getSimpleName(), iut.getTypeName());
         assertEquals(200.83, ((BigDecimal)iut.getValue()).doubleValue());
@@ -147,7 +147,7 @@ class FieldTests {
         iut.setNullable(Boolean.FALSE);
         iut.setMinimumLength((short)7);
         iut.setMaximumLength((short)12);
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         assertThrows(NumberFormatException.class, () -> {
             iut.setValue("currency");
         });
@@ -156,7 +156,7 @@ class FieldTests {
     @ValueSource(strings = {"2020-12-14", "2020-01-01"})
     void testSetValue_local_date_default_ISO_format_input_as_string(String date) {
         InputField iut = new InputField();
-        iut.setType(DataTypes.LOCALDATE.getTypeName());
+        iut.setType(DataTypes.LOCAL_DATE.getTypeName());
         iut.setValue(date);
         assertEquals(LocalDate.class.getSimpleName(), iut.getTypeName());
         assertEquals(date, iut.getValue().toString());
@@ -165,7 +165,7 @@ class FieldTests {
     @ValueSource(strings = {"2020/12/14", "2020/01/01"})
     void testSetValue_local_date_slash_format_input_as_string(String date) {
         InputField iut = new InputField("yyyy/MM/dd", "HH:mm:ss");
-        iut.setType(DataTypes.LOCALDATE.getTypeName());
+        iut.setType(DataTypes.LOCAL_DATE.getTypeName());
         iut.setValue(date);
         assertEquals(LocalDate.class.getSimpleName(), iut.getTypeName());
         assertEquals(date, ((LocalDate)iut.getValue()).format(DateTimeFormatter.ofPattern("yyyy/MM/dd")));
@@ -174,7 +174,7 @@ class FieldTests {
     @ValueSource(strings = {"2020 12 14", "2020 01 01"})
     void testSetValue_local_date_space_format_input_as_string(String date) {
         InputField iut = new InputField("yyyy MM dd", "HH:mm:ss");
-        iut.setType(DataTypes.LOCALDATE.getTypeName());
+        iut.setType(DataTypes.LOCAL_DATE.getTypeName());
         iut.setValue(date);
         assertEquals(LocalDate.class.getSimpleName(), iut.getTypeName());
         assertEquals(date, ((LocalDate)iut.getValue()).format(DateTimeFormatter.ofPattern("yyyy MM dd")));
@@ -500,7 +500,7 @@ class FieldTests {
         iut.setNullable(Boolean.FALSE);
         iut.setMinimumLength((short)7);
         iut.setMaximumLength((short)12);
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue(1234.5678d);
         assertEquals(Boolean.TRUE, iut.isValid());
         assertEquals(1234.5678d, ((BigDecimal)iut.getValue()).doubleValue());
@@ -511,7 +511,7 @@ class FieldTests {
         iut.setNullable(Boolean.FALSE);
         iut.setMinimumLength((short)7);
         iut.setMaximumLength((short)12);
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue(12.345d);
         assertEquals(Boolean.FALSE, iut.isValid());
         assertEquals(12.345d, ((BigDecimal)iut.getValue()).doubleValue());
@@ -522,7 +522,7 @@ class FieldTests {
         iut.setNullable(Boolean.FALSE);
         iut.setMinimumLength((short)7);
         iut.setMaximumLength((short)12);
-        iut.setType(DataTypes.BIGDECIMAL.getTypeName());
+        iut.setType(DataTypes.BIG_DECIMAL.getTypeName());
         iut.setValue(BigDecimal.valueOf(1234567.8901234d));
         assertEquals(Boolean.FALSE, iut.isValid());
         assertEquals(1234567.8901234d, ((BigDecimal)iut.getValue()).doubleValue());
