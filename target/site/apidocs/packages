@@ -1,0 +1,14 @@
+com.minimalism.common
+com.minimalism.files.domain.entities
+com.minimalism.files.domain.input
+com.minimalism.files.domain
+com.minimalism.files.domain.output
+com.minimalism.files.exceptions
+com.minimalism.files.service.input
+com.minimalism.files.service.output.avro
+com.minimalism.files.service.output
+com.minimalism.files.service.output.generic
+com.minimalism.files.service.output.kafka
+com.minimalism.files.service.output.kafka.seralizers
+com.minimalism.files.service
+com.minimalism

@@ -1,7 +1,6 @@
 package com.minimalism.files.service.input;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,14 +13,14 @@ import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 /**
  * @author R Jairam Iyer
- * The <em>RecordDescriptor>/em> class abstracts the definition of the input records. The description
+ * The <b>RecordDescriptor>/b> class abstracts the definition of the input records. The description
  * must be input to the system; the class reads the description from a JSON file in the input-definition
  * directory.
  * @implNote The service follows a convention to automatically discover the record descriptor file. For this
  * to work, the input file name must be specified as _<record-name>_<file-name>.<extension> or
  * <fixed-part-of-file-name>_<record-name>_<variable-part-of-file-name>.<extension>. In either of these
  * cases, the service will look for <record-name>.json as the redord descriptor file.
- * @implNote If the concention is not followed, the service will pickup <record-name>.json as the 
+ * @implNote If the concention is not followed, the service will pick up <record-name>.json as the 
  * record rescriptor file.  
  */
 public class RecordDescriptorReader {
@@ -57,7 +56,7 @@ public class RecordDescriptorReader {
             if(recordDescriptor != null) {
                 recordDescriptor.setRecordName(descriptorFileName);
             }
-        } catch (NoSuchPathException | IOException | URISyntaxException e) {
+        } catch (NoSuchPathException | IOException e) {
             throw new RecordDescriptorException(String.format("Exception occurred while locating record description file for file: %s, record name: %s; message: %s", fileName, descriptorFileName, e.getMessage()));
         }
         
@@ -85,7 +84,7 @@ public class RecordDescriptorReader {
                 // descriptor file not found...
                 throw new RecordDescriptorException(String.format("Unable to find record description file for file: %s, record name: %s", fileName, recordName));
             }
-        } catch (NoSuchPathException | IOException | URISyntaxException e) {
+        } catch (NoSuchPathException | IOException e) {
             throw new RecordDescriptorException(String.format("Exception occurred while locating record description file for file: %s, record name: %s; message: %s", fileName, recordName, e.getMessage())); 
         }
         

@@ -1,0 +1,24 @@
+-classpath
+'C:/Users/jaira/.m2/repository/org/apache/commons/commons-text/1.9/commons-text-1.9.jar;C:/Users/jaira/.m2/repository/org/apache/commons/commons-lang3/3.11/commons-lang3-3.11.jar;C:/Users/jaira/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.13.1/jackson-core-2.13.1.jar;C:/Users/jaira/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.13.1/jackson-databind-2.13.1.jar;C:/Users/jaira/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.13.1/jackson-annotations-2.13.1.jar;C:/Users/jaira/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.13.1/jackson-datatype-jsr310-2.13.1.jar;C:/Users/jaira/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-avro/2.13.1/jackson-dataformat-avro-2.13.1.jar;C:/Users/jaira/.m2/repository/javax/json/javax.json-api/1.1.4/javax.json-api-1.1.4.jar;C:/Users/jaira/.m2/repository/org/glassfish/javax.json/1.1.4/javax.json-1.1.4.jar;C:/Users/jaira/.m2/repository/ch/qos/logback/logback-classic/1.2.4/logback-classic-1.2.4.jar;C:/Users/jaira/.m2/repository/ch/qos/logback/logback-core/1.2.4/logback-core-1.2.4.jar;C:/Users/jaira/.m2/repository/org/slf4j/slf4j-api/1.7.31/slf4j-api-1.7.31.jar;C:/Users/jaira/.m2/repository/org/apache/avro/avro/1.10.2/avro-1.10.2.jar;C:/Users/jaira/.m2/repository/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar;C:/Users/jaira/.m2/repository/org/apache/kafka/kafka-clients/3.0.0/kafka-clients-3.0.0.jar;C:/Users/jaira/.m2/repository/io/confluent/kafka-avro-serializer/5.3.0/kafka-avro-serializer-5.3.0.jar;C:/Users/jaira/.m2/repository/io/confluent/kafka-schema-registry-client/5.3.0/kafka-schema-registry-client-5.3.0.jar;C:/Users/jaira/.m2/repository/io/confluent/common-config/5.3.0/common-config-5.3.0.jar;C:/Users/jaira/.m2/repository/io/confluent/common-utils/5.3.0/common-utils-5.3.0.jar;C:/Users/jaira/.m2/repository/org/apache/zookeeper/zookeeper/3.4.14/zookeeper-3.4.14.jar;C:/Users/jaira/.m2/repository/com/github/spotbugs/spotbugs-annotations/3.1.9/spotbugs-annotations-3.1.9.jar;C:/Users/jaira/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar;C:/Users/jaira/.m2/repository/jline/jline/0.9.94/jline-0.9.94.jar;C:/Users/jaira/.m2/repository/org/apache/yetus/audience-annotations/0.5.0/audience-annotations-0.5.0.jar;C:/Users/jaira/.m2/repository/io/netty/netty/3.10.6.Final/netty-3.10.6.Final.jar;C:/Users/jaira/.m2/repository/com/101tec/zkclient/0.10/zkclient-0.10.jar;C:/Users/jaira/.m2/repository/com/minimalism/file-slice-and-dice-shared/1.0-SNAPSHOT/file-slice-and-dice-shared-1.0-SNAPSHOT.jar'
+-encoding
+'UTF-8'
+-protected
+-source
+'17'
+-sourcepath
+'C:/Users/jaira/FileSliceAndDice/Git/file-ingestor/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2022. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'C:/Users/jaira/FileSliceAndDice/Git/file-ingestor/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'file-ingestor 1.0-SNAPSHOT API'
+-use
+-version
+-windowtitle
+'file-ingestor 1.0-SNAPSHOT API'

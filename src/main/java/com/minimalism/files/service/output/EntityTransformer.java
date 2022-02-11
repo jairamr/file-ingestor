@@ -19,7 +19,7 @@ public class EntityTransformer {
             f.setDataType(ifield.getTypeName());
             f.setValue(ifield.getValue());
             return f;
-        }).collect(Collectors.toList()));
+        }).toList());
         return returnValue;
     }
 }

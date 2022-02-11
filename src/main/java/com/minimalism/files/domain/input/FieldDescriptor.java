@@ -1,7 +1,6 @@
 package com.minimalism.files.domain.input;
 
 import java.util.Objects;
-
 import javax.json.Json;
 import javax.json.JsonObject;
 
@@ -9,6 +8,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.minimalism.shared.common.AllEnums.DataTypes;
 
+/**
+ * The <b>FieldDescriptor</b> class describes an input field in an input record. The FieldDescriptor 
+ * facilitates basic (<b><u>not business</b></u>) validation of each field (and therefore, record) read
+ * from the input file. 
+ * While parsing the input file, the data type specified in the FieldDescriptor is used to 'box' the value
+ * read from the file. The supported data types are:
+ * <ol>
+ *  <li>Boolean</li>
+ *  <li>BigDecimal</li>
+ *  <li>Double</li>
+ *  <li>Float</li>
+ *  <li>Integer</li>
+ *  <li>LocalDate</li>
+ *  </li>LocalTime</li>
+ *  <li>Long</li>
+ *  <li>String</li>
+ * </ol>
+ */
 public class FieldDescriptor {
     @JsonProperty("field-name")
     private String fieldName;
@@ -48,6 +65,7 @@ public class FieldDescriptor {
 
     
     /** 
+     * Gets the name of the field in the input reord. 
      * @return String
      */
     public String getFieldName() {
@@ -55,6 +73,7 @@ public class FieldDescriptor {
     }
     
     /** 
+     * Sets the name of the field in the input record.
      * @param fieldName
      */
     public void setFieldName(String fieldName) {
@@ -62,6 +81,7 @@ public class FieldDescriptor {
     }
     
     /** 
+     * Gets the position of the field in the input record.
      * @return int
      */
     public short getPosition() {
@@ -69,6 +89,7 @@ public class FieldDescriptor {
     }
     
     /** 
+     * Sets the position of the field in the input record.
      * @param position
      */
     public void setPosition(short position) {
@@ -76,6 +97,8 @@ public class FieldDescriptor {
     }
     
     /** 
+     * Gets the data type of the field. Primitive types - boolean, double, float, long, integer and some
+     * non-primitive types - string, big decimal, local date and local time are supported.
      * @return DataTypes
      */
     public DataTypes getDatatype() {
@@ -83,11 +106,17 @@ public class FieldDescriptor {
     }
     
     /** 
+     * Sets the data type of the field.
      * @param dataType
      */
     public void setDatatype(DataTypes dataType) {
         this.dataType = dataType;
     }
+
+    /**
+     * 
+     * @param dataType
+     */
     @JsonSetter("data-type")
     public void setDatatype(String dataType) {
         this.dataType = Enum.valueOf(DataTypes.class, dataType);
