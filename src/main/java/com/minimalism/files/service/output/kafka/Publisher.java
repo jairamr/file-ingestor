@@ -32,61 +32,43 @@ public class Publisher implements IPublish {
         this.configuration = configuration;
         this.avroSchema = serviceContext.getAvroSchema();
     }
+    
+    @Override
     public void publish(List<InputEntity> records, boolean asGeneric) throws InterruptedException {
         if(asGeneric) {
-            publishGenericRecord(records);
+            //publishGenericRecord(records);
         } else {
             publishEntity(records);
         }
     }
 
-    public void publishGenericRecord(List<InputEntity> records) throws InterruptedException {
-        var props = new Properties();
-        props.put("bootstrap.servers", this.configuration.getBootstrapServers());
-        props.put("buffer.memory", this.configuration.getPublisherBufferMemory());
-        props.put("retries", this.configuration.getPublisherRetries());
-        props.put("linger.ms", this.configuration.getPublisherLingerMilliseconds());
-        props.put("batch.size", this.configuration.getPublisherBatchSize());
-        props.put("auto.register.schemas", this.configuration.getAutoRegisterSchemasFlag());
-        props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
-        //props.put("key.serializer", this.configuration.getPublisherKeySerializer());
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    // public void publishGenericRecord(List<InputEntity> records) throws InterruptedException {
+    //     var props = setProperties();
         
-        props.put("value.serializer", this.configuration.getValueSerializer());
-        
-        if(this.avroSchema == null) {
-            InputEntity forSchema = records.get(0);
-            var entitySchema = forSchema.forAvroSchema().toString();
-            var parser = new Schema.Parser();
-            this.avroSchema = parser.parse(entitySchema);
-        }
-        long start = System.currentTimeMillis();
+    //     if(this.avroSchema == null) {
+    //         InputEntity forSchema = records.get(0);
+    //         var entitySchema = forSchema.forAvroSchema().toString();
+    //         var parser = new Schema.Parser();
+    //         this.avroSchema = parser.parse(entitySchema);
+    //     }
+    //     long start = System.currentTimeMillis();
                     
-        try(Producer<String, GenericRecord> producer = new KafkaProducer<>(props)) {
-            for(InputEntity inputRecord : records) {
-                ProducerRecord<String, GenericRecord> producerRecord = 
-                new ProducerRecord<>(this.configuration.getTopic(), entityToAvroGenericRecord(inputRecord));
-                producer.send(producerRecord, new PublisherCallback());
-            }
-        } catch (Exception e) {
-            logger.error("Error while publishing record: {}", e.getMessage());
-            throw new InterruptedException(String.format("Error while publishing record due to: %s", e.getMessage()));
-        }
-        logger.info("Producer with id: {} took: {} ms for {} records", this.hashCode(), System.currentTimeMillis() - start, records.size());
-    }
+    //     try(Producer<String, GenericRecord> producer = new KafkaProducer<>(props)) {
+    //         for(InputEntity inputRecord : records) {
+    //             ProducerRecord<String, GenericRecord> producerRecord = 
+    //             new ProducerRecord<>(this.configuration.getTopic(), entityToAvroGenericRecord(inputRecord));
+    //             producer.send(producerRecord, new PublisherCallback());
+    //         }
+    //     } catch (Exception e) {
+    //         logger.error("Error while publishing record: {}", e.getMessage());
+    //         throw new InterruptedException(String.format("Error while publishing record due to: %s", e.getMessage()));
+    //     }
+    //     logger.info("Producer with id: {} took: {} ms for {} records", this.hashCode(), System.currentTimeMillis() - start, records.size());
+    // }
 
     private void publishEntity(List<InputEntity> records) throws InterruptedException {
-        var props = new Properties();
-        props.put("bootstrap.servers", this.configuration.getBootstrapServers());
-        props.put("buffer.memory", this.configuration.getPublisherBufferMemory());
-        props.put("retries", this.configuration.getPublisherRetries());
-        props.put("linger.ms", this.configuration.getPublisherLingerMilliseconds());
-        props.put("batch.size", this.configuration.getPublisherBatchSize());
-        props.put("auto.register.schemas", this.configuration.getAutoRegisterSchemasFlag());
-        props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
-        props.put("key.serializer", this.configuration.getKeySerializer());
-        props.put("value.serializer", this.configuration.getValueSerializer());
-        
+        var props = setProperties();
+
         long start = System.currentTimeMillis();
                     
         try(Producer<String, Entity> producer = new KafkaProducer<>(props)) {
@@ -113,8 +95,23 @@ public class Publisher implements IPublish {
         @Override    
         public void onCompletion(RecordMetadata recordMetadata, Exception e) {     
             if (e != null) {         
-                e.printStackTrace();         
+                logger.error("Publisher failed to publish record.", e);         
             }    
         }
+    }
+
+    private Properties setProperties() {
+        var props = new Properties();
+        props.put("bootstrap.servers", this.configuration.getBootstrapServers());
+        props.put("buffer.memory", this.configuration.getPublisherBufferMemory());
+        props.put("retries", this.configuration.getPublisherRetries());
+        props.put("linger.ms", this.configuration.getPublisherLingerMilliseconds());
+        props.put("batch.size", this.configuration.getPublisherBatchSize());
+        props.put("auto.register.schemas", this.configuration.getAutoRegisterSchemasFlag());
+        props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
+        props.put("key.serializer", this.configuration.getKeySerializer());
+        props.put("value.serializer", this.configuration.getValueSerializer());
+
+        return props;
     }
 }

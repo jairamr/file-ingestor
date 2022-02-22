@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.shared.common.AllEnums.DataSources;
@@ -23,7 +22,7 @@ class IngestorContextTests {
         try {
             iut = new IngestorContext("client_1", "_HrData_Kaggle_Hr10t.csv");
         } catch (IOException | FileTypeNotSupportedException | InvalidFileException | NoSuchPathException
-                | RecordDescriptorException | URISyntaxException e) {
+                | RecordDescriptorException e) {
             e.printStackTrace();
         }
     }

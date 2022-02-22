@@ -3,14 +3,11 @@ src/main/resources/Hr5m.csv
 src/main/resources/Hr1m.csv
 .sts4-cache/classpath-data.json
 .metadata/**
-<<<<<<< HEAD
 .settings/org.eclipse.jdt.core.prefs
 .settings/org.eclipse.jdt.core.prefs
 .sts4-cache/classpath-data.json
 target/**
 
-=======
->>>>>>> master
 .vscode/launch.json
 target/surefire-reports/com.minimalism.AppTest.txt
 target/surefire-reports/com.minimalism.common.AppConfigHelperTests.txt

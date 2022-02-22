@@ -4,18 +4,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Objects;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.minimalism.shared.common.AllEnums.DataTypes;
 /**
- * The <em>InputField</em> describes a field in the <em>InputRecord</em>. It allows 
+ * The <b>InputField</b> describes a field in the <em>InputRecord</em>. It allows 
  * for basic validation of the field - the type of the value is as indicated, the 
  * string representation of value is between min and max (string) length and a non-nullable
  * field does not have a null value. 
@@ -27,7 +25,6 @@ public class InputField {
     private static short NULL_VALUE_BIT = 0;
     
     private String name;
-    private String typeName;
     private DataTypes dataType;
     private short position;
     private boolean nullable;
@@ -35,24 +32,28 @@ public class InputField {
     private short maximumLength;
     private Object value;
     private BitSet flags = new BitSet(4);
-    private String dateFormat;
-    private String timeFormat;
+    private List<String> dateFormats;
+    private List<String> timeFormats;
 
     public InputField() {
-        this.dateFormat = "yyyy-MM-dd";
-        this.timeFormat = "HH:mm:ss";
+        this.dateFormats = new ArrayList<>();
+        this.dateFormats.add("yyyy-MM-dd");
+        this.timeFormats = new ArrayList<>();
+        this.timeFormats.add("HH:mm:ss");
     }
 
-    public InputField(String dateFormat, String timeFormat) {
-        if(dateFormat != null && !dateFormat.isEmpty() && !dateFormat.isBlank()) {
-            this.dateFormat = dateFormat;
+    public InputField(List<String> dateFormat, List<String> timeFormat) {
+        if(dateFormat != null && !dateFormat.isEmpty()) {
+            this.dateFormats = dateFormat;
         } else {
-            this.dateFormat = "yyyy-MM-dd";
+            this.dateFormats = new ArrayList<>();
+            this.dateFormats.add("yyyy-MM-dd");
         }
-        if(timeFormat != null && !timeFormat.isEmpty() && !timeFormat.isBlank()) {
-            this.timeFormat = timeFormat;
+        if(timeFormat != null && !timeFormat.isEmpty()) {
+            this.timeFormats = timeFormat;
         } else {
-            this.timeFormat = "HH:mm:ss";
+            this.timeFormats = new ArrayList<>();
+            this.timeFormats.add("HH:mm:ss");
         }
     }
     /** 
@@ -68,21 +69,6 @@ public class InputField {
      */
     public void setName(String name) {
         this.name = name;
-    }
-    
-    /** 
-     * @return String
-     */
-    public String getTypeName() {
-        return typeName;
-    }
-    
-    /** 
-     * @param typeName
-     */
-    public void setType(String typeName) {
-        this.typeName = typeName;
-        this.dataType = Enum.valueOf(DataTypes.class, typeName);
     }
 
     public DataTypes getDataType() {
@@ -160,89 +146,50 @@ public class InputField {
      * @param value
      */
     public void setValue(Object value) throws NullPointerException, ClassCastException, NumberFormatException {
-        if(this.nullable && value == null) {
+        if(value == null) {
             this.value = value;
         } else {
-            //Class<?> targetType = Enum.valueOf(DataTypes.class, this.getTypeName().toUpperCase()).getType();
             var sValue = value.toString();
             
-            switch(this.getTypeName()) {
-                case "Boolean":
+            switch(this.getDataType()) {
+                case BOOLEAN:
                     if(!(sValue.equalsIgnoreCase("true") || sValue.equalsIgnoreCase("false"))) {
                         throw new NumberFormatException(String.format("Input value: %s is not a boolean value; only 'true' or 'false' are accepted.", sValue));
                     }
                     this.value = Boolean.valueOf(sValue);
                 break;
-                case "BigDecimal":
+                case BIG_DECIMAL:
                     this.value = new BigDecimal(sValue);
                 break;
-                case "LocalDate":
-                    DateTimeFormatter df = DateTimeFormatter.ofPattern(this.dateFormat);
-                    this.value = LocalDate.parse(sValue, df);
+                case CHARACTER:
+                    this.value = sValue.charAt(0);
                 break;
-                case "String":
-                    this.value = sValue;
+                case DOUBLE:
+                    this.value = Double.valueOf(sValue);
                 break;
-                case "Float":
+                case FLOAT:
                     this.value = Float.valueOf(sValue);
                 break;
-                case "Integer":
+                case INTEGER:
                     this.value = Integer.valueOf(sValue);
                 break;
-                case "Long":
+                case LOCAL_DATE:
+                    //DateTimeFormatter df = DateTimeFormatter.ofPattern(this.dateFormat);
+                    this.value = parseDate(sValue);
+                break;
+                case LOCAL_TIME:
+                    //DateTimeFormatter tf = DateTimeFormatter.ofPattern(this.timeFormat);
+                    this.value = parseTime(sValue);
+                break;
+                case LONG:
                     this.value = Long.valueOf(sValue);
                 break;
-                case "Double":
-                    this.value = Double.valueOf(sValue);
-                    break;
-                case "LocalTime":
-                    DateTimeFormatter tf = DateTimeFormatter.ofPattern(this.timeFormat);
-                    this.value = LocalTime.parse(sValue, tf);
-                break;
                 default:
-                    this.value = value;
+                    this.value = sValue;
                 break;
             }
         }
         setValidationStatus();
-    }
-
-    public JsonObject forAvroSchema() {
-
-        String avroRulesName;
-        String avroRulesTypeName;
-        if(this.getName().contains("-")) {
-            avroRulesName = this.getName().replace("-", "_");
-        } else {
-            avroRulesName = this.getName();
-        }
-        if(this.getTypeName().equals("Integer")) {
-            avroRulesTypeName = "int";
-        } else if(this.getTypeName().equals("Character")) {
-            avroRulesTypeName = "char";
-        } else if(this.getTypeName().equals("LocalDate")) {
-            avroRulesTypeName = "string";
-        } else if(this.getTypeName().equals("LocalTime")) {
-            avroRulesTypeName = "string";
-        } else {
-            avroRulesTypeName = this.getTypeName().toLowerCase();
-        }
-       
-        return Json.createObjectBuilder()
-        .add("name", avroRulesName)
-        .add("type", avroRulesTypeName)
-        .build();
-    }
-
-    public String asJson() {
-        String returnValue = null;
-        JsonMapper mapper = new JsonMapper();
-        try {
-            returnValue = mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return returnValue;
     }
 
     /** 
@@ -259,7 +206,7 @@ public class InputField {
      */
     @Override
     public int hashCode(){
-        return Objects.hash(this.name, this.typeName, this.value.toString());
+        return Objects.hash(this.name, this.dataType, this.value.toString());
     }
     
     /** 
@@ -281,14 +228,49 @@ public class InputField {
     public String toString() {
         return this.value.toString();
     }
+
+    private LocalDate parseDate(String date) {
+        LocalDate returnValue = null;
+        for(String dateFormat : this.dateFormats) {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(dateFormat);
+            try{
+                returnValue = LocalDate.parse(date, dtf);
+                break;
+            } catch(DateTimeParseException e){
+                // do nothing! try the next format...
+            }
+        }
+        return returnValue;
+    }
+
+    private LocalTime parseTime(String time) {
+        LocalTime returnValue = null;
+        for(String timeFormat : this.timeFormats) {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(timeFormat);
+            try{
+                returnValue = LocalTime.parse(time, dtf);
+            } catch(DateTimeParseException e) {
+                // do nothing! try the next format
+            }
+        }
+        return returnValue;
+    }
+
     private void setValidationStatus() {
-        if(this.nullable && this.value == null) {
-            flags.set(TYPE_BIT, true);
-            flags.set(MIN_LENGTH_BIT, true);
-            flags.set(MAX_LENGTH_BIT, true);
-            flags.set(NULL_VALUE_BIT, true);
-        } else{
-            flags.set(TYPE_BIT, this.value.getClass().getSimpleName().equals(this.typeName));
+        if(this.value == null) {
+            if(nullable) {
+                flags.set(TYPE_BIT, true);
+                flags.set(MIN_LENGTH_BIT, true);
+                flags.set(MAX_LENGTH_BIT, true);
+                flags.set(NULL_VALUE_BIT, true);
+            } else {
+                flags.set(TYPE_BIT, true);
+                flags.set(MIN_LENGTH_BIT, true);
+                flags.set(MAX_LENGTH_BIT, true);
+                flags.set(NULL_VALUE_BIT, false);
+            }
+        } else {
+            flags.set(TYPE_BIT, this.value.getClass().getSimpleName().equals(this.dataType.getTypeName()));
             flags.set(MIN_LENGTH_BIT, this.value.toString().length() >= this.minimumLength);
             flags.set(MAX_LENGTH_BIT, this.value.toString().length() <= this.maximumLength);
             flags.set(NULL_VALUE_BIT, this.value != null);

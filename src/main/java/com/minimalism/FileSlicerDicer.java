@@ -1,7 +1,6 @@
 package com.minimalism;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.exceptions.RecordDescriptorException;
@@ -23,7 +22,7 @@ public class FileSlicerDicer
      * @param args
      * @throws URISyntaxException
      */
-    public static void main( String[] args ) throws URISyntaxException
+    public static void main( String[] args )
     {
         String clientName = null;
         String inputFileName = null;

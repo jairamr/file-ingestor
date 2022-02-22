@@ -2,7 +2,6 @@ package com.minimalism.files.service.input;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -33,7 +32,7 @@ public class CSVFileReader implements IFileReader{
     private Map<Integer, ByteBuffer> recordsFromFile;
     private MappedByteBuffer mbb;
 
-    public CSVFileReader(int workerId, IngestorContext context, int bufferSize) throws NoSuchPathException, URISyntaxException {
+    public CSVFileReader(int workerId, IngestorContext context, int bufferSize) throws NoSuchPathException {
         this.id = workerId;
         this.serviceContext = context;
         this.bufferSize = bufferSize;
@@ -258,7 +257,7 @@ public class CSVFileReader implements IFileReader{
         return recordStart;
     }
     
-    private void setupOutput() throws NoSuchPathException, URISyntaxException{
+    private void setupOutput() throws NoSuchPathException{
         try {
             switch(this.serviceContext.getDestinationType()) {
                 case ACTIVE_MQ:
@@ -298,7 +297,8 @@ public class CSVFileReader implements IFileReader{
     private void publishRecords(List<InputEntity> records) throws InterruptedException{
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
-            kafkaPublisher.publishGenericRecord(records);
+            //kafkaPublisher.publishGenericRecord(records);
+            kafkaPublisher.publish(records, false);
         }
     }
 }

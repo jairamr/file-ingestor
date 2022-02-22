@@ -34,15 +34,15 @@ import com.minimalism.files.service.output.kafka.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
- * The <em>Reader</em> class in the primary service class for the slice-and-dice utility. This Service Class 
+ * The <b>Reader</b> class in the primary service class for the slice-and-dice file intake utility. This Service Class 
  * supports three types of input files:
  * <ol>
  *  <li> CSV or Comma Separated Values
  *  <li> DAT or Binary file
  *  <li> TXT or Text file
  * </ol>
- * The <em>Reader</em> class uses defined configuration to split the input file into sections. 
- * Each section is mapped to a <em>MappedByteBuffer</em> and each of these buffers is processed in a 
+ * The <b>Reader</b> class uses defined configuration to split the input file into sections. 
+ * Each section is mapped to a <b>MappedByteBuffer</b> and each of these buffers is processed in a 
  * separate thread. 
  * 
  */
@@ -55,7 +55,7 @@ public class Reader {
     BrokerConfiguration brokerConfiguration;
     IngestServiceSummary ingestionSummary;
 
-    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException, IOException, URISyntaxException {
+    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException {
         serviceContext = context;
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
         var slicer = new Slicer();
@@ -116,7 +116,7 @@ public class Reader {
      * @throws ServiceAbortedException
      * @throws URISyntaxException
      */
-    public void read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException, URISyntaxException {
+    public void read() throws IOException, FileTypeNotSupportedException, InterruptedException, NoSuchPathException, ServiceAbortedException {
         logger.info("Reading input file: {}", this.serviceContext.getInputFileInformation().getFilePath());
 
         if(this.serviceContext.getInputFileInformation().getFileType() == FileTypes.CSV) {
@@ -141,7 +141,7 @@ public class Reader {
      * @throws ServiceAbortedException
      * @throws URISyntaxException
      */
-    private void processFile(FileTypes fileType) throws IOException, NoSuchPathException, ServiceAbortedException, URISyntaxException {
+    private void processFile(FileTypes fileType) throws IOException, NoSuchPathException, ServiceAbortedException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;
@@ -197,9 +197,9 @@ public class Reader {
 
     /** 
      * <p>
-     * The <em>sliceAndProcessFile()</em> method is used when the service is operating in the
+     * The <b>sliceAndProcessFile()</b> method is used when the service is operating in the
      * 'balanced' mode. This mode is particularly useful when working with large input files,
-     * typically > 100MiB. 
+     * typically > 100 MiB. 
      * </p>
      * <p>
      * The input file is treated as a sequemce of bytes, which is sliced into equal sized
@@ -217,7 +217,7 @@ public class Reader {
      * @throws ServiceAbortedException
      * @throws URISyntaxException
      */
-    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException, URISyntaxException {
+    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;
@@ -368,10 +368,9 @@ public class Reader {
      * @param iteration
      * @return List<Callable<InputBufferReadStatus>>
      * @throws NoSuchPathException
-     * @throws URISyntaxException
      */
     private List<Callable<InputBufferReadStatus>> prepareWorkers(FileTypes fileType, 
-                                                    long thisBatchOffsetInFile, int iteration) throws NoSuchPathException, URISyntaxException {
+                                                    long thisBatchOffsetInFile, int iteration) throws NoSuchPathException {
         List<Callable<InputBufferReadStatus>> returnValue = new ArrayList<>();
 
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
@@ -387,7 +386,7 @@ public class Reader {
         return returnValue;
     }
 
-    private Callable<InputBufferReadStatus> prepareWorker(FileTypes fileType, long thisBatchOffsetInFile, int iteration) throws NoSuchPathException, URISyntaxException {
+    private Callable<InputBufferReadStatus> prepareWorker(FileTypes fileType, long thisBatchOffsetInFile, int iteration) throws NoSuchPathException {
         Callable<InputBufferReadStatus> returnValue = null;
 
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
@@ -418,14 +417,15 @@ public class Reader {
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
-                kafkaPublisher.publishGenericRecord(records);
+                //kafkaPublisher.publishGenericRecord(records);
+                kafkaPublisher.publish(records, false);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
     }
 
-    private void setupOutput() throws NoSuchPathException, URISyntaxException{
+    private void setupOutput() throws NoSuchPathException {
         try {
             switch(this.serviceContext.getDestinationType()) {
                 case ACTIVE_MQ:

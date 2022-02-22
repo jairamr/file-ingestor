@@ -20,7 +20,7 @@ class RecordDescriptorReaderTests {
 
     @BeforeAll
     static void parseDefinitionFile() throws RecordDescriptorException {
-        hrRecordDescriptor = RecordDescriptorReader.readDefinition("Client_1", "_HrData_Kaggle_Hr5m.csv");
+        hrRecordDescriptor = RecordDescriptorReader.readDefinition("Client_1", "_HrData_Kaggle_Hr5t.csv");
     }
 
     @Test
@@ -99,17 +99,6 @@ class RecordDescriptorReaderTests {
         assertEquals(DataTypes.STRING, iut.getDatatype());
         assertEquals(1, iut.getMinimumLength());
         assertEquals(5, iut.getMaximumLength());
-        assertEquals(false, iut.isNullAllowed());
-    }
-
-    @Test
-    void testPrepareInput_field_descriptor_email_id_ok() {
-        FieldDescriptor iut = hrRecordDescriptor.getFieldDescriptors().stream().filter(fd -> fd.getPosition() == 6).findFirst().orElse(null);
-        assertEquals("emailId", iut.getFieldName());
-        assertEquals(6, iut.getPosition());
-        assertEquals(DataTypes.EMAIL, iut.getDatatype());
-        assertEquals(8, iut.getMinimumLength());
-        assertEquals(50, iut.getMaximumLength());
         assertEquals(false, iut.isNullAllowed());
     }
 

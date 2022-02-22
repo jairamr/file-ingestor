@@ -6,6 +6,8 @@ import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.entities.InputField;
 import com.minimalism.files.domain.input.FieldDescriptor;
 import com.minimalism.files.domain.input.RecordDescriptor;
+import com.minimalism.files.service.output.EntityTransformer;
+import com.minimalism.shared.domain.Entity;
 /**
  * @author R Jairam Iyer
  * 
@@ -16,7 +18,7 @@ public class EntityBuilder {
     /** 
      * @param inputRecord
      * @param recordDescriptor
-     * @return Entity
+     * @return InputEntity
      */
     public static InputEntity build(String inputRecord, RecordDescriptor recordDescriptor) {
         var domainEntity = new InputEntity(recordDescriptor.getEntityClassName(),
@@ -46,20 +48,24 @@ public class EntityBuilder {
         return domainEntity;
     }
 
+    public static Entity buildEntity(RecordDescriptor recordDescriptor) {
+        return EntityTransformer.transform(build(recordDescriptor));
+    }
+
     /** 
      * @param fieldDescriptor
      * @return Field
      */
-    private static InputField buildField(FieldDescriptor fieldDescriptor, String dateFormat, String timeFormat) {
-        var field = new InputField(dateFormat, timeFormat);
-        field.setName(fieldDescriptor.getFieldName());
-        field.setPosition(fieldDescriptor.getPosition());
-        field.setType(fieldDescriptor.getDatatype().getTypeName());
-        field.setNullable(fieldDescriptor.isNullAllowed());
-        field.setMinimumLength(fieldDescriptor.getMinimumLength());
-        field.setMaximumLength(fieldDescriptor.getMaximumLength());
+    private static InputField buildField(FieldDescriptor fieldDescriptor, List<String> dateFormat, List<String> timeFormat) {
+        var inputField = new InputField(dateFormat, timeFormat);
+        inputField.setName(fieldDescriptor.getFieldName());
+        inputField.setPosition(fieldDescriptor.getPosition());
+        inputField.setDataType(fieldDescriptor.getDatatype());
+        inputField.setNullable(fieldDescriptor.isNullAllowed());
+        inputField.setMinimumLength(fieldDescriptor.getMinimumLength());
+        inputField.setMaximumLength(fieldDescriptor.getMaximumLength());
 
-        return field;
+        return inputField;
     }
 
 

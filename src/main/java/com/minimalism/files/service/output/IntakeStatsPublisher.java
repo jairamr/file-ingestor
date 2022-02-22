@@ -2,7 +2,6 @@ package com.minimalism.files.service.output;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
@@ -13,7 +12,7 @@ import com.minimalism.shared.exceptions.NoSuchPathException;
 import com.minimalism.shared.service.FileSystemConfigHelper;
 
 public class IntakeStatsPublisher {
-    public void saveStats(String clientName, String inputFileName, String recordName, IngestServiceSummary summary) throws NoSuchPathException, IOException, URISyntaxException {
+    public void saveStats(String clientName, String inputFileName, String recordName, IngestServiceSummary summary) throws NoSuchPathException, IOException {
         var instrumentationPath = FileSystemConfigHelper.getInstance().getServiceInstrumentationDirectory(clientName);
         String instrFileName = inputFileName.concat("_")
                                 .concat(recordName)

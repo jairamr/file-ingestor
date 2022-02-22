@@ -13,7 +13,7 @@ import com.minimalism.files.domain.input.RecordDescriptor;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 /**
  * @author R Jairam Iyer
- * The <em>RecordDescriptor>/em> class abstracts the definition of the input records. The description
+ * The <b>RecordDescriptor>/b> class abstracts the definition of the input records. The description
  * must be input to the system; the class reads the description from a JSON file in the input-definition
  * directory.
  * @implNote The service follows a convention to automatically discover the record descriptor file. For this

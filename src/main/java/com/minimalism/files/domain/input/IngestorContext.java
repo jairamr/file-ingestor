@@ -7,8 +7,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
 
-import javax.json.JsonObject;
-
 import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.common.AllEnums.FileTypes;
 import com.minimalism.shared.domain.ServiceConfiguration;
@@ -31,7 +29,7 @@ public class IngestorContext {
     ServiceConfiguration serviceConfiguration;
     private Schema avroSchema;
     
-    public IngestorContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException, URISyntaxException {
+    public IngestorContext(String clientName, String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
         this.clientName = clientName;
         ClientConfigHelper configHelper = new ClientConfigHelper(clientName);
         this.serviceConfiguration = configHelper.getServiceConfiguration(clientName);
@@ -41,12 +39,13 @@ public class IngestorContext {
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
         this.recordName = this.recordDescriptor.getRecordName();
         
-        JsonObject avroSchemaJson = OutputRecordSchemaGenerator.createAvroSchema(clientName, this.recordDescriptor, this.recordName);
-        this.avroSchema = new Schema.Parser().parse(avroSchemaJson.toString());
+        // JsonObject avroSchemaJson = OutputRecordSchemaGenerator.createAvroSchema(clientName, this.recordDescriptor, this.recordName);
+        // this.avroSchema = new Schema.Parser().parse(avroSchemaJson.toString());
+        this.avroSchema = OutputRecordSchemaGenerator.generateAvroSchemaForEntity();
         
     }
 
-    public IngestorContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException, URISyntaxException {
+    public IngestorContext(String clientName, String fileName, String recordName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, RecordDescriptorException {
         this(clientName, fileName);
         this.recordName = recordName;
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName, recordName);
@@ -88,7 +87,7 @@ public class IngestorContext {
         return this.avroSchema;
     }
 
-    private void buildInputFileInformation(String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException, URISyntaxException {
+    private void buildInputFileInformation(String fileName) throws IOException, FileTypeNotSupportedException, InvalidFileException, NoSuchPathException {
         FileTypes fileType = FileTypes.CSV;
         Path fullPath = null;
         String fileExtension = null;
