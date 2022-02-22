@@ -29,3 +29,4 @@ target/surefire-reports/TEST-com.minimalism.files.service.OutputRecordSchemaGene
 target/surefire-reports/TEST-com.minimalism.files.service.RecordDescriptorReaderTests.xml
 target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
 target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
+*.class
