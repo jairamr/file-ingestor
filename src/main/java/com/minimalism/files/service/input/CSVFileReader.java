@@ -127,7 +127,7 @@ public class CSVFileReader implements IFileReader{
             FileChannel fcInputFile = inputFile.getChannel(); 
             this.mbb = fcInputFile.map(MapMode.READ_WRITE, thisBuffersOffsetInFile, this.bufferSize);
             fcInputFile.close();
-
+            
             processByteBuffer(thisBatchOffsetInFile, readStatus);
         } catch (Exception e) {
             logger.error("An error occurred while reading the file {} during iteration {}, at  offset: {} and thread offset: {}. The system returned the message: {}", 
@@ -143,15 +143,15 @@ public class CSVFileReader implements IFileReader{
      * @param readStatus
      */
     private void processByteBuffer(long thisBatchOffsetInFile, InputBufferReadStatus readStatus) {
-
+    
         long thisBuffersOffsetInFile = thisBatchOffsetInFile + this.id * this.bufferSize;
-        var bytesRead = 0;
-        ByteBuffer recordBuffer;
+        //var bytesRead = 0;
+        //ByteBuffer recordBuffer;
         var recordStart = 0;
-        var recordEnd = 0;
-        var recordNumber = 0;
-        byte fromFile = 0;
-        var recordLength = 0;
+        //var recordEnd = 0;
+        // var recordNumber = 0;
+        // byte fromFile = 0;
+        // var recordLength = 0;
 
         if(iteration == 0 && thisBuffersOffsetInFile == 0) {
             // file may contain headers
@@ -161,54 +161,60 @@ public class CSVFileReader implements IFileReader{
             // records could be split due to slicing...
             recordStart = handlePreamble(readStatus);
         }
-        while(this.mbb.remaining() > 0) {
-            fromFile = this.mbb.get();
-            if(fromFile == '\r') {
-                byte lf = this.mbb.get();
-                if(lf == '\n') {
-                    recordEnd = this.mbb.position() - 2;
-                    recordLength = recordEnd - recordStart;
-                    bytesRead += recordLength; // these are useful bytes.. without record separators
-                
-                    var temp = new byte[recordLength];
-                    mbb.position(recordStart);
-                    mbb.get(temp, 0, recordLength);
-                    recordBuffer = ByteBuffer.wrap(temp);
-                    this.recordsFromFile.put(recordNumber++, recordBuffer);
-                    
-                    this.mbb.position(recordStart + recordLength + 2);
-                    recordStart = this.mbb.position();
-                } // else... nothing. Until end-of-record is found, keep reading bytes... 
-            }
-        } 
-        // if we get to the buffer's end (position == limit) and not finding the end-of-record...
-        // handle residual bytes in the ByteBuffer
-        // sometimes, near the end of the file, there can be a bunch of NULL values, due to variable
-        // fields sizes. Since it is the last record, there are no record separators and these NULL
-        // characters will remain in the file. WE CANNOT PROCESS NULL STRINGS!
-        // So, we better check and drop them!
-        if(this.mbb.position() == this.mbb.limit()) {
-            recordEnd = this.mbb.position();
-            var nullCount = 0;
-            for(var x = recordStart; x < recordEnd; x++) {
-                if(this.mbb.get(x) == 0x00) {
-                    nullCount++;
-                }
-            }
-            if(nullCount > 1) {
-                // a sequence of null bytes indicates trailing bytes in the buffer at write time...
-                recordEnd -= nullCount;
-            }
-        }
-        recordLength = recordEnd - recordStart;
-        var temp = new byte[recordLength];
-        this.mbb.position(recordStart);
-        this.mbb.get(temp, 0, recordLength);
-        readStatus.setUnprocessedPostamble(temp);
         
-        readStatus.setRecordsRead(this.recordsFromFile.size());
-        readStatus.setBytesRead(bytesRead);
-        readStatus.getIterationStatistics().setParsingEndTime(System.currentTimeMillis());
+        ByteBufferParser parser = new ByteBufferParser(this.mbb, 
+            this.serviceContext.getRecordDescriptor().getRecordSeparator()[1],
+            this.serviceContext.getRecordDescriptor().getRecordSeparator()[0]);
+        parser.parse(recordStart, readStatus, recordsFromFile);
+        
+        // while(this.mbb.remaining() > 0) {
+        //     fromFile = this.mbb.get();
+        //     if(fromFile == '\r') {
+        //         byte lf = this.mbb.get();
+        //         if(lf == '\n') {
+        //             recordEnd = this.mbb.position() - 2;
+        //             recordLength = recordEnd - recordStart;
+        //             bytesRead += recordLength; // these are useful bytes.. without record separators
+                
+        //             var temp = new byte[recordLength];
+        //             mbb.position(recordStart);
+        //             mbb.get(temp, 0, recordLength);
+        //             recordBuffer = ByteBuffer.wrap(temp);
+        //             this.recordsFromFile.put(recordNumber++, recordBuffer);
+                    
+        //             this.mbb.position(recordStart + recordLength + 2);
+        //             recordStart = this.mbb.position();
+        //         } // else... nothing. Until end-of-record is found, keep reading bytes... 
+        //     }
+        // } 
+        // // if we get to the buffer's end (position == limit) and not finding the end-of-record...
+        // // handle residual bytes in the ByteBuffer
+        // // sometimes, near the end of the file, there can be a bunch of NULL values, due to variable
+        // // fields sizes. Since it is the last record, there are no record separators and these NULL
+        // // characters will remain in the file. WE CANNOT PROCESS NULL STRINGS!
+        // // So, we better check and drop them!
+        // if(this.mbb.position() == this.mbb.limit()) {
+        //     recordEnd = this.mbb.position();
+        //     var nullCount = 0;
+        //     for(var x = recordStart; x < recordEnd; x++) {
+        //         if(this.mbb.get(x) == 0x00) {
+        //             nullCount++;
+        //         }
+        //     }
+        //     if(nullCount > 1) {
+        //         // a sequence of null bytes indicates trailing bytes in the buffer at write time...
+        //         recordEnd -= nullCount;
+        //     }
+        // }
+        // recordLength = recordEnd - recordStart;
+        // var temp = new byte[recordLength];
+        // this.mbb.position(recordStart);
+        // this.mbb.get(temp, 0, recordLength);
+        // readStatus.setUnprocessedPostamble(temp);
+        
+        // readStatus.setRecordsRead(this.recordsFromFile.size());
+        // readStatus.setBytesRead(bytesRead);
+        // readStatus.getIterationStatistics().setParsingEndTime(System.currentTimeMillis());
     }
 
     /** 
