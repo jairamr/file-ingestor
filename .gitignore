@@ -6,7 +6,7 @@ src/main/resources/Hr1m.csv
 .settings/org.eclipse.jdt.core.prefs
 .settings/org.eclipse.jdt.core.prefs
 .sts4-cache/classpath-data.json
-target/**
+*/target/**
 
 .vscode/launch.json
 target/surefire-reports/com.minimalism.AppTest.txt
