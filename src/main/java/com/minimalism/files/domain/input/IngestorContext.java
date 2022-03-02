@@ -1,7 +1,6 @@
 package com.minimalism.files.domain.input;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -17,7 +16,7 @@ import com.minimalism.shared.service.ClientConfigHelper;
 import com.minimalism.shared.service.FileSystemConfigHelper;
 import com.minimalism.files.exceptions.RecordDescriptorException;
 import com.minimalism.files.service.input.RecordDescriptorReader;
-import com.minimalism.files.service.output.avro.OutputRecordSchemaGenerator;
+import com.minimalism.shared.service.AvroSchemaGenerator;
 
 import org.apache.avro.Schema;
 
@@ -39,9 +38,9 @@ public class IngestorContext {
         this.recordDescriptor = RecordDescriptorReader.readDefinition(clientName, fileName);
         this.recordName = this.recordDescriptor.getRecordName();
         
-        // JsonObject avroSchemaJson = OutputRecordSchemaGenerator.createAvroSchema(clientName, this.recordDescriptor, this.recordName);
-        // this.avroSchema = new Schema.Parser().parse(avroSchemaJson.toString());
-        this.avroSchema = OutputRecordSchemaGenerator.generateAvroSchemaForEntity();
+        //this.avroSchema = AvroSchemaGenerator.forInputEntity();
+        this.avroSchema = AvroSchemaGenerator.createAvroSchemaForEntity();
+
         
     }
 

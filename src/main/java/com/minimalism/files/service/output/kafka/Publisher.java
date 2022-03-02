@@ -1,6 +1,9 @@
 package com.minimalism.files.service.output.kafka;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import com.minimalism.files.domain.entities.InputEntity;
@@ -8,7 +11,9 @@ import com.minimalism.files.domain.entities.InputField;
 import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.service.output.EntityTransformer;
 import com.minimalism.files.service.output.IPublish;
+import com.minimalism.shared.service.AvroSchemaGenerator;
 import com.minimalism.shared.domain.Entity;
+import com.minimalism.shared.domain.Field;
 import com.minimalism.shared.service.BrokerConfiguration;
 
 import org.apache.avro.Schema;
@@ -34,62 +39,90 @@ public class Publisher implements IPublish {
     }
     
     @Override
-    public void publish(List<InputEntity> records, boolean asGeneric) throws InterruptedException {
-        if(asGeneric) {
-            //publishGenericRecord(records);
+    public void publish(List<InputEntity> records) throws InterruptedException {
+        publishGenericRecord(records);
+    }
+
+    public void publishGenericRecord(List<InputEntity> records) throws InterruptedException {
+        var props = setProperties();
+                    
+        if(this.configuration.getRecordKey().equals("none")) {
+            this.publishWithoutRecordKey(records, props);
         } else {
-            publishEntity(records);
+            this.publishWithConfiguredRecordKey(records, props);
         }
     }
 
-    // public void publishGenericRecord(List<InputEntity> records) throws InterruptedException {
-    //     var props = setProperties();
-        
-    //     if(this.avroSchema == null) {
-    //         InputEntity forSchema = records.get(0);
-    //         var entitySchema = forSchema.forAvroSchema().toString();
-    //         var parser = new Schema.Parser();
-    //         this.avroSchema = parser.parse(entitySchema);
-    //     }
-    //     long start = System.currentTimeMillis();
-                    
-    //     try(Producer<String, GenericRecord> producer = new KafkaProducer<>(props)) {
-    //         for(InputEntity inputRecord : records) {
-    //             ProducerRecord<String, GenericRecord> producerRecord = 
-    //             new ProducerRecord<>(this.configuration.getTopic(), entityToAvroGenericRecord(inputRecord));
-    //             producer.send(producerRecord, new PublisherCallback());
-    //         }
-    //     } catch (Exception e) {
-    //         logger.error("Error while publishing record: {}", e.getMessage());
-    //         throw new InterruptedException(String.format("Error while publishing record due to: %s", e.getMessage()));
-    //     }
-    //     logger.info("Producer with id: {} took: {} ms for {} records", this.hashCode(), System.currentTimeMillis() - start, records.size());
-    // }
-
-    private void publishEntity(List<InputEntity> records) throws InterruptedException {
-        var props = setProperties();
-
+    private void publishWithConfiguredRecordKey(List<InputEntity> records, Properties props) throws InterruptedException {
         long start = System.currentTimeMillis();
-                    
-        try(Producer<String, Entity> producer = new KafkaProducer<>(props)) {
+        
+        try(Producer<String, GenericRecord> producer = new KafkaProducer<>(props)) {
             for(InputEntity inputRecord : records) {
-                ProducerRecord<String, Entity> producerRecord = 
-                new ProducerRecord<>(this.configuration.getTopic(), EntityTransformer.transform(inputRecord));
-                producer.send(producerRecord, new PublisherCallback());
+                    ProducerRecord<String, GenericRecord> producerRecord = 
+                    new ProducerRecord<>(this.configuration.getTopic(), this.configuration.getRecordKey(), entityToAvroGenericRecord(inputRecord));
+                    producer.send(producerRecord, new PublisherCallback());
             }
+        } catch (Exception e) {
+            logger.error("Error while publishing record: {}", e.getMessage());
+            throw new InterruptedException(String.format("Error while publishing record due to: %s", e.getMessage()));
         }
         logger.info("Producer with id: {} took: {} ms for {} records", this.hashCode(), System.currentTimeMillis() - start, records.size());
     }
 
-    private GenericRecord entityToAvroGenericRecord(InputEntity inputEntity) {
-        GenericRecord avroGenericRecord = new GenericData.Record(this.avroSchema);
-        List<InputField> fields = inputEntity.getFields();
-        for(var i = 0; i < fields.size(); i++) {
-            avroGenericRecord.put(fields.get(i).getName(), fields.get(i).getValue());
+    private void publishWithoutRecordKey(List<InputEntity> records, Properties props) throws InterruptedException {
+        long start = System.currentTimeMillis();
+        
+        try(Producer<String, GenericRecord> producer = new KafkaProducer<>(props)) {
+            for(InputEntity inputRecord : records) {
+                    ProducerRecord<String, GenericRecord> producerRecord = 
+                    new ProducerRecord<>(this.configuration.getTopic(), entityToAvroGenericRecord(inputRecord));
+                    producer.send(producerRecord, new PublisherCallback());
+            }
+        } catch (Exception e) {
+            logger.error("Error while publishing record: {}", e.getMessage());
+            throw new InterruptedException(String.format("Error while publishing record due to: %s", e.getMessage()));
         }
-        return avroGenericRecord;
+        logger.info("Producer with id: {} took: {} ms for {} records", this.hashCode(), System.currentTimeMillis() - start, records.size());
     }
 
+    private GenericRecord inputEntityToAvroGenericRecord(InputEntity inputEntity) {
+        GenericRecord avroGenericRecordForEntity = new GenericData.Record(this.avroSchema);
+        avroGenericRecordForEntity.put("name", "inputEntity");
+        avroGenericRecordForEntity.put("targetDomainClassName", "com.minimalism.files.dimain.entities");
+        
+        ArrayList<GenericRecord> inputFields = new ArrayList<>();
+        List<InputField> fields = inputEntity.getFields();
+        for(InputField f : fields) {
+            GenericRecord avroGenericRecordForField = new GenericData.Record(AvroSchemaGenerator.forInputField());
+            avroGenericRecordForField.put("name", f.getName());
+            avroGenericRecordForField.put("dataType", f.getDataType().name());
+            avroGenericRecordForField.put("value", f.getValue().toString());
+            inputFields.add(avroGenericRecordForField);
+        }
+        avroGenericRecordForEntity.put("inputFields", inputFields);
+
+        return avroGenericRecordForEntity;
+    }
+
+    private GenericRecord entityToAvroGenericRecord(InputEntity inputEntity) {
+        Entity outputEntity = EntityTransformer.transform(inputEntity);
+        GenericRecord avroGenericRecordForEntity = new GenericData.Record(this.avroSchema);
+        avroGenericRecordForEntity.put("name", outputEntity.getName());
+        avroGenericRecordForEntity.put("targetDomainClassName", outputEntity.getTargetDomainName());
+        
+        Map<String, GenericRecord> inputFields = new HashMap<>();
+        List<Field> fields =  outputEntity.getListOfFields();
+        for(Field f : fields) {
+            GenericRecord avroGenericRecordForField = new GenericData.Record(AvroSchemaGenerator.createAvroSchemaForField());
+            avroGenericRecordForField.put("name", f.getName());
+            avroGenericRecordForField.put("dataType", f.getDataType().name());
+            avroGenericRecordForField.put("value", f.getValue());
+            inputFields.put(f.getName(), avroGenericRecordForField);
+        }
+        avroGenericRecordForEntity.put("fields", inputFields);
+
+        return avroGenericRecordForEntity;
+    }
     private class PublisherCallback implements Callback 
     {         
         @Override    
@@ -111,7 +144,7 @@ public class Publisher implements IPublish {
         props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
         props.put("key.serializer", this.configuration.getKeySerializer());
         props.put("value.serializer", this.configuration.getValueSerializer());
-
+        props.put("record.key", this.configuration.getRecordKey());
         return props;
     }
 }

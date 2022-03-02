@@ -15,7 +15,7 @@ public class EntityTransformer {
             Field f = new Field();
             f.setName(ifield.getName());
             f.setDataType(ifield.getDataType());
-            f.setValue(ifield.getValue());
+            f.setValue(ifield.getValue().toString());
             return f;
         }).toList());
         return returnValue;

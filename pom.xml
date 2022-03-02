@@ -13,6 +13,10 @@
         <id>redhat-ea</id>
         <url>	https://maven.repository.redhat.com/earlyaccess/all/</url>
     </repository>
+    <repository>
+      <id>confluent</id>
+      <url>https://mvnrepository.com/artifact/io.confluent/</url>
+    </repository>
   </repositories>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,16 +49,6 @@
       <version>1.9</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.12.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-avro</artifactId>
-      <version>2.13.1</version>
-    </dependency>
-    <dependency>
       <groupId>javax.json</groupId>
       <artifactId>javax.json-api</artifactId>
       <version>1.1.4</version>
@@ -70,14 +64,9 @@
       <version>1.2.4</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
-      <version>1.10.2</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
-      <version>3.0.0</version>
+      <version>3.1.0</version>
     </dependency>
    <!-- https://mvnrepository.com/artifact/io.confluent/kafka-avro-serializer -->
     <dependency>

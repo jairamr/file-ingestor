@@ -20,7 +20,6 @@ public class FileSlicerDicer
     private static Logger logger = LoggerFactory.getLogger(FileSlicerDicer.class);
     /** 
      * @param args
-     * @throws URISyntaxException
      */
     public static void main( String[] args )
     {

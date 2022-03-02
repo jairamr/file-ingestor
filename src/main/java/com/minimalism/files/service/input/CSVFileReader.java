@@ -297,8 +297,11 @@ public class CSVFileReader implements IFileReader{
     private void publishRecords(List<InputEntity> records) throws InterruptedException{
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
-            //kafkaPublisher.publishGenericRecord(records);
-            kafkaPublisher.publish(records, false);
+            try {
+                kafkaPublisher.publish(records);
+            } catch(InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

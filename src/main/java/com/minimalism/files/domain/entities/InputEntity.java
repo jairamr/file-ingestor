@@ -28,12 +28,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class InputEntity implements IValidation {
     private String name;
     private String targetDomainClassName;
-    List<InputField> fields;
+    List<InputField> inputFields;
 
     public InputEntity(String name, String domainClassName, int fieldCount) {
         this.name = name;
         this.targetDomainClassName = domainClassName;
-        fields = new ArrayList<>(fieldCount);
+        inputFields = new ArrayList<>(fieldCount);
     }
     
     /** 
@@ -74,7 +74,7 @@ public class InputEntity implements IValidation {
      * @return List<Field>
      */
     public List<InputField> getFields() {
-        return fields;
+        return inputFields;
     }
     
     /** 
@@ -82,7 +82,7 @@ public class InputEntity implements IValidation {
      * @param fields
      */
     public void setFields(List<InputField> fields) {
-        this.fields = fields;
+        this.inputFields = fields;
     }
     
     /**
@@ -91,7 +91,7 @@ public class InputEntity implements IValidation {
      * @param field - instance of <b>InputField</b> class that is instantiated by the <b>InputRecordFormatter</b>.
      */
     public void addField(InputField field) {
-        this.fields.add(field.getPosition(), field);
+        this.inputFields.add(field.getPosition(), field);
     }
     
     /** 
@@ -100,7 +100,7 @@ public class InputEntity implements IValidation {
      * @return Field
      */
     public InputField getField(short position) {
-        return this.fields.get(position);
+        return this.inputFields.get(position);
     }
     
     /** 
@@ -109,7 +109,7 @@ public class InputEntity implements IValidation {
      * @return Field
      */
     public InputField getField(String fieldName) {
-        return this.fields.stream().filter(f -> f.getName().equals(fieldName)).findFirst().orElse(null);
+        return this.inputFields.stream().filter(f -> f.getName().equals(fieldName)).findFirst().orElse(null);
     }
 
     public String asJson() {
@@ -147,9 +147,9 @@ public class InputEntity implements IValidation {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return this.fields.stream()
+        return this.inputFields.stream()
                             .filter(InputField::isValid)
-                            .collect(Collectors.counting()) == this.fields.size();
+                            .collect(Collectors.counting()) == this.inputFields.size();
     }
     
     /** 
@@ -157,7 +157,7 @@ public class InputEntity implements IValidation {
      */
     @Override
     public List<InputField> invalids() {
-        return this.fields.stream()
+        return this.inputFields.stream()
                             .filter(f -> !f.isValid())
                             .toList();
     }

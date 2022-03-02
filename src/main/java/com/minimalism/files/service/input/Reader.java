@@ -417,8 +417,7 @@ public class Reader {
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
             var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
             try {
-                //kafkaPublisher.publishGenericRecord(records);
-                kafkaPublisher.publish(records, false);
+                kafkaPublisher.publish(records);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

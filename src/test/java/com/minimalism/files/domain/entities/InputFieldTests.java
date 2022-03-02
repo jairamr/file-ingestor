@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import com.minimalism.shared.common.AllEnums.DataTypes;
@@ -144,7 +146,12 @@ class InputFieldTests {
     @ParameterizedTest
     @ValueSource(strings = {"2020/12/14", "2020/01/01"})
     void testSetValue_local_date_slash_format_input_as_string(String date) {
-        InputField iut = new InputField("yyyy/MM/dd", "HH:mm:ss");
+        List<String> dateFormats =new ArrayList<>();
+        dateFormats.add("yyyy/MM/dd");
+        List<String> timeFormats =new ArrayList<>();
+        timeFormats.add("HH:mm:ss");
+        
+        InputField iut = new InputField(dateFormats, timeFormats);
         iut.setDataType(DataTypes.LOCAL_DATE);
         iut.setValue(date);
         assertEquals(LocalDate.class.getSimpleName(), iut.getDataType().getTypeName());
@@ -153,7 +160,12 @@ class InputFieldTests {
     @ParameterizedTest
     @ValueSource(strings = {"2020 12 14", "2020 01 01"})
     void testSetValue_local_date_space_format_input_as_string(String date) {
-        InputField iut = new InputField("yyyy MM dd", "HH:mm:ss");
+        List<String> dateFormats =new ArrayList<>();
+        dateFormats.add("yyyy MM dd");
+        List<String> timeFormats =new ArrayList<>();
+        timeFormats.add("HH:mm:ss");
+        
+        InputField iut = new InputField(dateFormats, timeFormats);
         iut.setDataType(DataTypes.LOCAL_DATE);
         iut.setValue(date);
         assertEquals(LocalDate.class.getSimpleName(), iut.getDataType().getTypeName());
