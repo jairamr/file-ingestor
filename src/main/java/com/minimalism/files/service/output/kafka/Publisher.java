@@ -144,7 +144,7 @@ public class Publisher implements IPublish {
         props.put("schema.registry.url", this.configuration.getSchemaRegistryUrl());
         props.put("key.serializer", this.configuration.getKeySerializer());
         props.put("value.serializer", this.configuration.getValueSerializer());
-        props.put("record.key", this.configuration.getRecordKey());
+        
         return props;
     }
 }

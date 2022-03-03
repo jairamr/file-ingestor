@@ -47,6 +47,7 @@ public class FileSlicerDicer
         }
         Reader reader = null;
         IngestorContext context = null;
+        long start = System.currentTimeMillis();
         try {
             if(args.length < 3) {
                 context = new IngestorContext(clientName, inputFileName, recordDescriptorFileName);
@@ -66,6 +67,7 @@ public class FileSlicerDicer
                 IntakeStatsPublisher statsPublisher = new IntakeStatsPublisher();
                 statsPublisher.saveStats(clientName, inputFileName, context.getRecordName(), runSummary);
                 logger.info("Run completed with following statistics: {}", runSummary);
+                logger.info("TOTAL TIME = {}", System.currentTimeMillis() - start);
             } else {
                 System.console().printf("Unable to create an instance of com.minimalism.FileSlicerDicer");
                 System.exit(1);
