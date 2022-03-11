@@ -1,5 +1,6 @@
 package com.minimalism.files.service.input;
 
+import com.minimalism.common.AllEnums.BufferReaderStatus;
 import com.minimalism.shared.domain.IterationStatistics;
 
 public class InputBufferReadStatus {
@@ -10,7 +11,7 @@ public class InputBufferReadStatus {
     private int bufferNumber;
     private byte[] unprocessedPreamble;
     private byte[] unprocessedPostamble;
-    boolean error;
+    private BufferReaderStatus readStatus;
     Throwable e;
 
     public InputBufferReadStatus() {
@@ -165,21 +166,25 @@ public class InputBufferReadStatus {
         this.unprocessedPostamble = unprocessedPostamble;
     }
     /** 
-     * @return boolean
+     * @return BufferReaderStatus
      */
+    public BufferReaderStatus getStatus() {
+        return this.readStatus;
+    }
+
+    public void setStatus(BufferReaderStatus status) {
+        this.readStatus = status;
+    }
+
     public boolean hasError() {
-        return error;
+        return (this.readStatus == BufferReaderStatus.COMPLETED_WITH_ERRORS || 
+                    this.readStatus == BufferReaderStatus.COMPLETED_WITH_EXCEPTION);
     }
-    /** 
-     * @param error
-     */
-    public void setError(boolean error) {
-        this.error = error;
-    }
+    
     /** 
      * @return Throwable
      */
-    public Throwable getE() {
+    public Throwable getException() {
         return e;
     }
     /** 
@@ -187,7 +192,7 @@ public class InputBufferReadStatus {
      */
     public void setException(Throwable e) {
         this.e = e;
-        this.error = true;
+        this.readStatus = BufferReaderStatus.COMPLETED_WITH_EXCEPTION;
     }
     public long getIterationDuration() {
         return this.getIterationStatistics().getIterationDuration();
@@ -216,14 +221,21 @@ public class InputBufferReadStatus {
             preBytes = this.unprocessedPreamble.length;
         }
 
-        if(!this.error) {
+        if(this.readStatus == BufferReaderStatus.COMPLETED) {
             returnValue = String.format("Thread with name: %s, processed buffer number: %d, completed processing of " +
             "iteration: %d and processed: %d bytes into %d records, in %d ms. The byte buffer had an unprocessed preamble of: %d bytes " +
             "and an unprocessed postamble of: %d bytes", this.iterationStatistics.getThreadName(), 
             bufferNumber, this.iterationStatistics.getIterationNumber(), 
             this.iterationStatistics.getProcessedBytes(), this.iterationStatistics.getProcessedRecords(), 
             this.getIterationDuration(), preBytes, postBytes);
-        } else {
+        } else if(this.readStatus == BufferReaderStatus.COMPLETED_WITH_ERRORS) {
+            returnValue = String.format("Thread with name: %s, processed buffer number: %d, completed, WITH SOME ERRORS, processing of " +
+            "iteration: %d and processed: %d bytes into %d records, in %d ms. The byte buffer had an unprocessed preamble of: %d bytes " +
+            "and an unprocessed postamble of: %d bytes", this.iterationStatistics.getThreadName(), 
+            bufferNumber, this.iterationStatistics.getIterationNumber(), 
+            this.iterationStatistics.getProcessedBytes(), this.iterationStatistics.getProcessedRecords(), 
+            this.getIterationDuration(), preBytes, postBytes);
+        } else if(this.readStatus == BufferReaderStatus.COMPLETED_WITH_EXCEPTION) {
             returnValue = String.format("Thread with id: %d aborted with an error. The exception: %s occurred " + 
             "with a message: '", this.iterationStatistics.getWorkerId(), 
             e.getClass().getSimpleName(), e.getMessage());

@@ -12,5 +12,13 @@ public class AllEnums {
         KAFKA,
         RESTFUL,
         WEBSOCKET
-    }    
+    }
+
+    public enum BufferReaderStatus {
+        COMPLETED,
+        COMPLETED_WITH_ERRORS,
+        COMPLETED_WITH_EXCEPTION,
+        INPUT_BUFFER_EMPTY,
+
+    }
 }

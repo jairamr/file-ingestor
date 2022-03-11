@@ -9,7 +9,9 @@ import java.nio.channels.FileChannel.MapMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.minimalism.common.AllEnums.BufferReaderStatus;
 import com.minimalism.files.domain.entities.InputEntity;
 import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.service.output.kafka.Publisher;
@@ -63,12 +65,12 @@ public class CSVFileReader implements IFileReader{
         
         InputBufferReadStatus returnValue = null;
         List<InputEntity> records = null;
-        byte[] recordSeparators = this.serviceContext.getRecordDescriptor().getRecordSeparator();
+        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
         
         // worker threads are reused. Clear the previous iteration results.
         this.recordsFromFile.clear();
         
-        if(recordSeparators[1] != 0x00) {
+        if(recordSeparator.length == 2) {
             returnValue = processTwoCharRecordSeparator(thisBatchOffsetInFile, iteration, numberOfThreads);
         } else {
             //recordsFromFile = processOneCharRecordSeparator(fcInputFile);
@@ -88,6 +90,7 @@ public class CSVFileReader implements IFileReader{
             } catch(InterruptedException e) {
                 if(returnValue != null) {
                     returnValue.setException(e);
+                    returnValue.setStatus(BufferReaderStatus.COMPLETED_WITH_EXCEPTION);
                 }
                 Thread.currentThread().interrupt();
             }
@@ -114,7 +117,7 @@ public class CSVFileReader implements IFileReader{
 
         var currentThread = Thread.currentThread();
         
-        long thisBuffersOffsetInFile = thisBatchOffsetInFile + this.id * this.bufferSize;
+        long thisBuffersOffsetInFile = thisBatchOffsetInFile + (this.id * this.bufferSize);
         
         var readStatus = new InputBufferReadStatus(currentThread.getId(),
                         currentThread.getName(), numberOfThreads, iteration, thisBatchOffsetInFile, 
@@ -124,15 +127,19 @@ public class CSVFileReader implements IFileReader{
         readStatus.getIterationStatistics().setByteOffsetForBuffer(thisBuffersOffsetInFile);
 
         try(var inputFile = new RandomAccessFile(this.serviceContext.getInputFileInformation().getFilePath().toString(), "rw")) {
-            FileChannel fcInputFile = inputFile.getChannel(); 
-            this.mbb = fcInputFile.map(MapMode.READ_WRITE, thisBuffersOffsetInFile, this.bufferSize);
-            fcInputFile.close();
-            
-            processByteBuffer(thisBatchOffsetInFile, readStatus);
+            if(thisBuffersOffsetInFile < this.serviceContext.getInputFileInformation().getFileSize()) {
+                FileChannel fcInputFile = inputFile.getChannel(); 
+                this.mbb = fcInputFile.map(MapMode.READ_WRITE, thisBuffersOffsetInFile, this.bufferSize);
+                fcInputFile.close();
+                processByteBuffer(thisBatchOffsetInFile, readStatus);
+            } else {
+                readStatus.setStatus(BufferReaderStatus.INPUT_BUFFER_EMPTY);
+            }
         } catch (Exception e) {
             logger.error("An error occurred while reading the file {} during iteration {}, at  offset: {} and thread offset: {}. The system returned the message: {}", 
             this.serviceContext.getInputFileInformation().getFilePath(), iteration, thisBatchOffsetInFile, thisBuffersOffsetInFile, e.getMessage());
             readStatus.setException(e);
+            readStatus.setStatus(BufferReaderStatus.COMPLETED_WITH_EXCEPTION);
         }
         readStatus.setIterationEndTime(System.currentTimeMillis());
         
@@ -152,6 +159,7 @@ public class CSVFileReader implements IFileReader{
         var recordNumber = 0;
         byte fromFile = 0;
         var recordLength = 0;
+        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
 
         if(iteration == 0 && thisBuffersOffsetInFile == 0) {
             // file may contain headers
@@ -169,9 +177,9 @@ public class CSVFileReader implements IFileReader{
         
         while(this.mbb.remaining() > 0) {
             fromFile = this.mbb.get();
-            if(fromFile == '\r') {
+            if(fromFile == recordSeparator[0]) { //'\r') {
                 byte lf = this.mbb.get();
-                if(lf == '\n') {
+                if(lf == recordSeparator[1]) { //'\n') {
                     recordEnd = this.mbb.position() - 2;
                     recordLength = recordEnd - recordStart;
                     bytesRead += recordLength; // these are useful bytes.. without record separators
@@ -206,11 +214,15 @@ public class CSVFileReader implements IFileReader{
                 recordEnd -= nullCount;
             }
         }
-        recordLength = recordEnd - recordStart;
-        var temp = new byte[recordLength];
-        this.mbb.position(recordStart);
-        this.mbb.get(temp, 0, recordLength);
-        readStatus.setUnprocessedPostamble(temp);
+        // edge condition when buffer has just the training bytes 0x00 due to disk page size.
+        // we check if the buffer has anything useful at all.
+        if(recordEnd > recordStart) {
+            recordLength = recordEnd - recordStart;
+            var temp = new byte[recordLength];
+            this.mbb.position(recordStart);
+            this.mbb.get(temp, 0, recordLength);
+            readStatus.setUnprocessedPostamble(temp);
+        }
         
         readStatus.setRecordsRead(this.recordsFromFile.size());
         readStatus.setBytesRead(bytesRead);
@@ -222,15 +234,16 @@ public class CSVFileReader implements IFileReader{
      */
     private int handleHeaders() {
         var startFrom = 0;
+        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
         if(this.serviceContext.getInputFileInformation().isHeaderPresent()) {
             while(this.mbb.remaining() > 0) {
                 byte fromFile = this.mbb.get();
-                if(fromFile == '\r') {
-                    byte lf = mbb.get();
-                    if(lf == '\n') {
-                        startFrom = this.mbb.position();
-                        break;
+                if(fromFile == recordSeparator[0]) { //'\r') {
+                    if(recordSeparator.length == 2) {
+                        mbb.get();
                     }
+                    startFrom = this.mbb.position();
+                    break;
                 }
             }
         }
@@ -243,24 +256,61 @@ public class CSVFileReader implements IFileReader{
     private int handlePreamble(InputBufferReadStatus readStatus) {
         // we treat all first records as incomplete since slicing can cause breaks at any point.
         var recordStart = 0;
+        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
+        int recordSeparatorLength = recordSeparator.length;
+        if(recordSeparatorLength == 2) {
+            recordStart = parseAndPreservePreambleForTwoCharSeparator(readStatus);
+        } else {
+            recordStart = parseAndPreservePreambleForOneCharSeparator(readStatus);
+        }
+        
+        return recordStart;
+    }
+
+    private int parseAndPreservePreambleForTwoCharSeparator(InputBufferReadStatus readStatus) {
+        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
+        int recordSeparatorLength = recordSeparator.length;
+
+        // two char record separator. Checking both bytes in case the separator is not CR/LF but some
+        // other characters. In those cases, we must continue to look for the combination
         while(this.mbb.remaining() > 0) {
             byte fromFile = this.mbb.get();
-            if(fromFile == '\r') {
-                byte lf = this.mbb.get();
-                if(lf == '\n') {
-                    var recordEnd = this.mbb.position() - 2;
+            if(fromFile == recordSeparator[0]) { //'\r') {
+                byte followingByte = this.mbb.get();
+                if(followingByte == recordSeparator[1]) { // '\n') {
+                    var recordEnd = this.mbb.position() - recordSeparatorLength;
                     var recordLength = recordEnd - 0;
                     var temp = new byte[recordLength];
                     this.mbb.position(0);
                     this.mbb.get(temp, 0, recordLength);
                     readStatus.setUnprocessedPreamble(temp);
-                    this.mbb.position(0 + recordLength + 2);
-                    recordStart = this.mbb.position();
+                    this.mbb.position(0 + recordLength + recordSeparatorLength);
                     break;
-                } 
+                }
             }
         }
-        return recordStart;
+        return this.mbb.position();
+    }
+
+    private int parseAndPreservePreambleForOneCharSeparator(InputBufferReadStatus readStatus) {
+        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
+        int recordSeparatorLength = recordSeparator.length;
+        
+        while(this.mbb.hasRemaining()) {
+            byte fromFile = this.mbb.get();
+            if(fromFile == recordSeparator[0]) {
+                var recordEnd = this.mbb.position() - recordSeparatorLength;
+                var recordLength = recordEnd - 0;
+                var temp = new byte[recordLength];
+                this.mbb.position(0);
+                this.mbb.get(temp, 0, recordLength);
+                readStatus.setUnprocessedPreamble(temp);
+                this.mbb.position(0 + recordLength + recordSeparatorLength);
+                break;
+            }
+        }
+        
+        return this.mbb.position();
     }
     
     private void setupOutput() throws NoSuchPathException{
@@ -275,7 +325,7 @@ public class CSVFileReader implements IFileReader{
                 case KAFKA:
                     BrokerConfigurationReader brokerConfigurationReader = 
                     new BrokerConfigurationReader(this.serviceContext.getClientName(), 
-                    this.serviceContext.getRecordName());
+                    this.serviceContext.getRecordName(), "kafka");
                     this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
                 break;
                 case NTFS:
@@ -302,9 +352,11 @@ public class CSVFileReader implements IFileReader{
 
     private void publishRecords(List<InputEntity> records) throws InterruptedException{
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
-            var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
+            //TO DO... use DI to get configured IPublish instance (for valid and invalid records)
+            var validEntitiesPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
+            Map<Boolean, List<InputEntity>> validatedEntities = records.stream().collect(Collectors.partitioningBy(InputEntity::isValid));
             try {
-                kafkaPublisher.publish(records);
+                validEntitiesPublisher.publish(validatedEntities.get(true));
             } catch(InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
