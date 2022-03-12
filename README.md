@@ -6,6 +6,8 @@ Reading a file sequentially, in a single thread of processing, parsing it for re
   CPU cycles. This utility changes all of that! The idea is to view the input file as a sequence of bytes, slicing it into small, manageable segments, map these segments to a **java.nio.MappedByteBuffer**, processing them in parallel. The crux of the problem is that when a file is split at arbitrary boundries, portions of the record will lie in different buffers. That is, the liklihood of the start and end of all buffers having 'residual' bytes is very high. The app collects these residual bytes at the end of each iteration to parse and publish the residual records.
   
   > ## if you must have the records in the same order as received, this utility is not for you!
+
+Placing the records as avro objects in Kafka allows for the luxury of consuming them by several utilities, each working in parallel and independant of each other. 
   
   > ##### Please see documents in the 'Analysis & Design' folder for details
 
