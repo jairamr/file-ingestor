@@ -220,7 +220,7 @@ public class Reader {
      * @throws ServiceAbortedException
      * @throws URISyntaxException
      */
-    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
+     private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;

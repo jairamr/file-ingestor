@@ -117,6 +117,10 @@ public class InputBufferReadStatus {
     public void setBytesRead(long bytesRead) {
         this.iterationStatistics.setProcessedBytes(bytesRead);
     }
+
+    public void additionalBytesRead(int bytesRead) {
+        this.iterationStatistics.addProcessedBytes(bytesRead);
+    }
     /** 
      * @return int
      */

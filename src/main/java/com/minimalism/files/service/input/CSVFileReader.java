@@ -33,11 +33,15 @@ public class CSVFileReader implements IFileReader{
     private int iteration;
     private Map<Integer, ByteBuffer> recordsFromFile;
     private MappedByteBuffer mbb;
+    private byte[] recordSeparator;
+    private int separatorLength;
 
     public CSVFileReader(int workerId, IngestorContext context, int bufferSize) throws NoSuchPathException {
         this.id = workerId;
         this.serviceContext = context;
         this.bufferSize = bufferSize;
+        this.recordSeparator = context.getRecordDescriptor().getRecordSeparator();
+        this.separatorLength = this.recordSeparator.length;
         this.recordsFromFile = new HashMap<>();
         setupOutput();
     }
@@ -65,16 +69,12 @@ public class CSVFileReader implements IFileReader{
         
         InputBufferReadStatus returnValue = null;
         List<InputEntity> records = null;
-        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
         
         // worker threads are reused. Clear the previous iteration results.
         this.recordsFromFile.clear();
         
-        if(recordSeparator.length == 2) {
-            returnValue = processTwoCharRecordSeparator(thisBatchOffsetInFile, iteration, numberOfThreads);
-        } else {
-            //recordsFromFile = processOneCharRecordSeparator(fcInputFile);
-        }
+        returnValue = processInputRecords(thisBatchOffsetInFile, iteration, numberOfThreads);
+        
         if(recordsFromFile.size() > 0) {
             logger.info("Number of records read from file: {}", recordsFromFile.size());
             var formatter = new InputRecordFormatter(this.serviceContext.getRecordDescriptor());
@@ -84,9 +84,7 @@ public class CSVFileReader implements IFileReader{
             // publish the parsed records.
             try{
                 publishRecords(records);
-                if(returnValue != null) { 
-                    returnValue.getIterationStatistics().setPublishingEndTime(System.currentTimeMillis());
-                }
+                returnValue.getIterationStatistics().setPublishingEndTime(System.currentTimeMillis());
             } catch(InterruptedException e) {
                 if(returnValue != null) {
                     returnValue.setException(e);
@@ -113,7 +111,7 @@ public class CSVFileReader implements IFileReader{
      * @param numberOfThreads - the number of threads (and therefore, the number of buffers) being used.
      * @return InputBufferReadStatus - the out come of processing a single byte buffer.
      */
-    private InputBufferReadStatus processTwoCharRecordSeparator(long thisBatchOffsetInFile, int iteration, int numberOfThreads) {
+    private InputBufferReadStatus processInputRecords(long thisBatchOffsetInFile, int iteration, int numberOfThreads) {
 
         var currentThread = Thread.currentThread();
         
@@ -152,15 +150,8 @@ public class CSVFileReader implements IFileReader{
     private void processByteBuffer(long thisBatchOffsetInFile, InputBufferReadStatus readStatus) {
     
         long thisBuffersOffsetInFile = thisBatchOffsetInFile + this.id * this.bufferSize;
-        var bytesRead = 0;
-        ByteBuffer recordBuffer;
         var recordStart = 0;
-        var recordEnd = 0;
-        var recordNumber = 0;
-        byte fromFile = 0;
-        var recordLength = 0;
-        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
-
+        
         if(iteration == 0 && thisBuffersOffsetInFile == 0) {
             // file may contain headers
             recordStart = handleHeaders();
@@ -170,63 +161,14 @@ public class CSVFileReader implements IFileReader{
             recordStart = handlePreamble(readStatus);
         }
         
-        // ByteBufferParser parser = new ByteBufferParser(this.mbb, 
-        //     this.serviceContext.getRecordDescriptor().getRecordSeparator()[1],
-        //     this.serviceContext.getRecordDescriptor().getRecordSeparator()[0]);
-        // parser.parse(recordStart, readStatus, recordsFromFile);
-        
-        while(this.mbb.remaining() > 0) {
-            fromFile = this.mbb.get();
-            if(fromFile == recordSeparator[0]) { //'\r') {
-                byte lf = this.mbb.get();
-                if(lf == recordSeparator[1]) { //'\n') {
-                    recordEnd = this.mbb.position() - 2;
-                    recordLength = recordEnd - recordStart;
-                    bytesRead += recordLength; // these are useful bytes.. without record separators
-                
-                    var temp = new byte[recordLength];
-                    mbb.position(recordStart);
-                    mbb.get(temp, 0, recordLength);
-                    recordBuffer = ByteBuffer.wrap(temp);
-                    this.recordsFromFile.put(recordNumber++, recordBuffer);
-                    
-                    this.mbb.position(recordStart + recordLength + 2);
-                    recordStart = this.mbb.position();
-                } // else... nothing. Until end-of-record is found, keep reading bytes... 
-            }
-        } 
-        // if we get to the buffer's end (position == limit) and not finding the end-of-record...
-        // handle residual bytes in the ByteBuffer
-        // sometimes, near the end of the file, there can be a bunch of NULL values, due to variable
-        // fields sizes. Since it is the last record, there are no record separators and these NULL
-        // characters will remain in the file. WE CANNOT PROCESS NULL STRINGS!
-        // So, we better check and drop them!
-        if(this.mbb.position() == this.mbb.limit()) {
-            recordEnd = this.mbb.position();
-            var nullCount = 0;
-            for(var x = recordStart; x < recordEnd; x++) {
-                if(this.mbb.get(x) == 0x00) {
-                    nullCount++;
-                }
-            }
-            if(nullCount > 1) {
-                // a sequence of null bytes indicates trailing bytes in the buffer at write time...
-                recordEnd -= nullCount;
-            }
+        ByteBufferParser parser = new ByteBufferParser(); 
+        if(this.separatorLength == 1) {
+            parser.parseOneByteSeparator(recordStart, readStatus);
+        } else if(this.separatorLength == 2) {
+            parser.parseTwoByteSeparator(recordStart, readStatus);
+        } else {
+            // error...
         }
-        // edge condition when buffer has just the training bytes 0x00 due to disk page size.
-        // we check if the buffer has anything useful at all.
-        if(recordEnd > recordStart) {
-            recordLength = recordEnd - recordStart;
-            var temp = new byte[recordLength];
-            this.mbb.position(recordStart);
-            this.mbb.get(temp, 0, recordLength);
-            readStatus.setUnprocessedPostamble(temp);
-        }
-        
-        readStatus.setRecordsRead(this.recordsFromFile.size());
-        readStatus.setBytesRead(bytesRead);
-        readStatus.getIterationStatistics().setParsingEndTime(System.currentTimeMillis());
     }
 
     /** 
@@ -234,7 +176,6 @@ public class CSVFileReader implements IFileReader{
      */
     private int handleHeaders() {
         var startFrom = 0;
-        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
         if(this.serviceContext.getInputFileInformation().isHeaderPresent()) {
             while(this.mbb.remaining() > 0) {
                 byte fromFile = this.mbb.get();
@@ -256,9 +197,7 @@ public class CSVFileReader implements IFileReader{
     private int handlePreamble(InputBufferReadStatus readStatus) {
         // we treat all first records as incomplete since slicing can cause breaks at any point.
         var recordStart = 0;
-        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
-        int recordSeparatorLength = recordSeparator.length;
-        if(recordSeparatorLength == 2) {
+        if(this.separatorLength == 2) {
             recordStart = parseAndPreservePreambleForTwoCharSeparator(readStatus);
         } else {
             recordStart = parseAndPreservePreambleForOneCharSeparator(readStatus);
@@ -268,9 +207,7 @@ public class CSVFileReader implements IFileReader{
     }
 
     private int parseAndPreservePreambleForTwoCharSeparator(InputBufferReadStatus readStatus) {
-        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
-        int recordSeparatorLength = recordSeparator.length;
-
+        
         // two char record separator. Checking both bytes in case the separator is not CR/LF but some
         // other characters. In those cases, we must continue to look for the combination
         while(this.mbb.remaining() > 0) {
@@ -278,13 +215,13 @@ public class CSVFileReader implements IFileReader{
             if(fromFile == recordSeparator[0]) { //'\r') {
                 byte followingByte = this.mbb.get();
                 if(followingByte == recordSeparator[1]) { // '\n') {
-                    var recordEnd = this.mbb.position() - recordSeparatorLength;
+                    var recordEnd = this.mbb.position() - this.separatorLength;
                     var recordLength = recordEnd - 0;
                     var temp = new byte[recordLength];
                     this.mbb.position(0);
                     this.mbb.get(temp, 0, recordLength);
                     readStatus.setUnprocessedPreamble(temp);
-                    this.mbb.position(0 + recordLength + recordSeparatorLength);
+                    this.mbb.position(0 + recordLength + this.separatorLength);
                     break;
                 }
             }
@@ -293,19 +230,17 @@ public class CSVFileReader implements IFileReader{
     }
 
     private int parseAndPreservePreambleForOneCharSeparator(InputBufferReadStatus readStatus) {
-        byte[] recordSeparator = this.serviceContext.getRecordDescriptor().getRecordSeparator();
-        int recordSeparatorLength = recordSeparator.length;
         
         while(this.mbb.hasRemaining()) {
             byte fromFile = this.mbb.get();
-            if(fromFile == recordSeparator[0]) {
-                var recordEnd = this.mbb.position() - recordSeparatorLength;
+            if(fromFile == this.recordSeparator[0]) {
+                var recordEnd = this.mbb.position() - this.separatorLength;
                 var recordLength = recordEnd - 0;
                 var temp = new byte[recordLength];
                 this.mbb.position(0);
                 this.mbb.get(temp, 0, recordLength);
                 readStatus.setUnprocessedPreamble(temp);
-                this.mbb.position(0 + recordLength + recordSeparatorLength);
+                this.mbb.position(0 + recordLength + this.separatorLength);
                 break;
             }
         }
@@ -360,6 +295,107 @@ public class CSVFileReader implements IFileReader{
             } catch(InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    protected class ByteBufferParser {
+        void parseOneByteSeparator(int recordStart, InputBufferReadStatus readStatus) {
+            var bytesRead = 0;
+            ByteBuffer recordBuffer;
+            var recordEnd = 0;
+            var recordNumber = 0;
+            byte fromFile = 0;
+            var recordLength = 0;
+    
+            mbb.position(recordStart);
+    
+            while(mbb.remaining() > 0) {
+                fromFile = mbb.get();
+                if(fromFile == recordSeparator[0]) {
+                    recordEnd = mbb.position() - separatorLength;
+                    recordLength = recordEnd - recordStart;
+                    bytesRead += recordLength; // these are useful bytes.. without record separators
+                
+                    var temp = new byte[recordLength];
+                    mbb.position(recordStart);
+                    mbb.get(temp, 0, recordLength);
+                    recordBuffer = ByteBuffer.wrap(temp);
+                    recordsFromFile.put(recordNumber++, recordBuffer);
+                    
+                    mbb.position(recordStart + recordLength + separatorLength);
+                    recordStart = mbb.position(); 
+                }
+            }
+            readStatus.getIterationStatistics().addProcessedBytes(bytesRead);
+            postProcessing(readStatus, recordStart);
+        }
+
+        void parseTwoByteSeparator(int recordStart, InputBufferReadStatus readStatus) {
+            var bytesRead = 0;
+            ByteBuffer recordBuffer;
+            var recordEnd = 0;
+            var recordNumber = 0;
+            byte fromFile = 0;
+            var recordLength = 0;
+    
+            mbb.position(recordStart);
+    
+            while(mbb.remaining() > 0) {
+                fromFile = mbb.get();
+                if(fromFile == recordSeparator[0]) {
+                    byte followingByte = mbb.get();
+                    if(followingByte == recordSeparator[1]) {
+                        recordEnd = mbb.position() - separatorLength;
+                        recordLength = recordEnd - recordStart;
+                        bytesRead += recordLength; // these are useful bytes.. without record separators
+                    
+                        var temp = new byte[recordLength];
+                        mbb.position(recordStart);
+                        mbb.get(temp, 0, recordLength);
+                        recordBuffer = ByteBuffer.wrap(temp);
+                        recordsFromFile.put(recordNumber++, recordBuffer);
+                        
+                        mbb.position(recordStart + recordLength + separatorLength);
+                        recordStart = mbb.position();
+                    } // else... nothing. Until end-of-record is found, keep reading bytes... 
+                }
+            }
+            readStatus.getIterationStatistics().addProcessedBytes(bytesRead);
+            postProcessing(readStatus, recordStart);
+        }
+
+        private void postProcessing(InputBufferReadStatus readStatus, int recordStart) {
+            // if we get to the buffer's end (position == limit) and not finding the end-of-record...
+        // handle residual bytes in the ByteBuffer
+        // sometimes, near the end of the file, there can be a bunch of NULL values, due to variable
+        // fields sizes. Since it is the last record, there are no record separators and these NULL
+        // characters will remain in the file. WE CANNOT PROCESS NULL STRINGS!
+        // So, we better check and drop them!
+        int recordEnd = 0;
+        int recordLength = 0;
+
+        if(mbb.position() == mbb.limit()) {
+            recordEnd = mbb.position();
+            var nullCount = 0;
+            for(var x = recordStart; x < recordEnd; x++) {
+                if(mbb.get(x) == 0x00) {
+                    nullCount++;
+                }
+            }
+            if(nullCount > 1) {
+                // a sequence of null bytes indicates trailing bytes in the buffer at write time...
+                recordEnd -= nullCount;
+            }
+        }
+        recordLength = recordEnd - recordStart;
+        var temp = new byte[recordLength];
+        mbb.position(recordStart);
+        mbb.get(temp, 0, recordLength);
+        readStatus.setUnprocessedPostamble(temp);
+        
+        readStatus.setRecordsRead(recordsFromFile.size());
+        readStatus.additionalBytesRead(temp.length);
+        readStatus.getIterationStatistics().setParsingEndTime(System.currentTimeMillis());
         }
     }
 }
