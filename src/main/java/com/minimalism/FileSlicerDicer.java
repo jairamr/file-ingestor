@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.exceptions.RecordDescriptorException;
+import com.minimalism.files.exceptions.ResourceAllocationException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.input.Reader;
 import com.minimalism.files.service.output.IntakeStatsPublisher;
@@ -72,7 +73,7 @@ public class FileSlicerDicer
                 System.console().printf("Unable to create an instance of com.minimalism.FileSlicerDicer");
                 System.exit(1);
             }
-        } catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException | RecordDescriptorException | ServiceAbortedException e) {
+        } catch (InvalidFileException | FileTypeNotSupportedException | IOException | NoSuchPathException | InterruptedException | RecordDescriptorException | ServiceAbortedException | ResourceAllocationException e) {
             Thread.currentThread().interrupt();
             logger.error("Service terminated with error due to: {}", e.getMessage());
             if(logger.isDebugEnabled()) {

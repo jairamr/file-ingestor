@@ -7,12 +7,14 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.minimalism.shared.common.AllEnums.DataSources;
 import com.minimalism.shared.common.AllEnums.FileTypes;
@@ -28,6 +30,7 @@ import com.minimalism.files.domain.input.InputFileInformation;
 import com.minimalism.files.domain.input.IngestorContext;
 import com.minimalism.files.domain.input.SlicerConfigurationInformation;
 import com.minimalism.files.exceptions.RecordDescriptorException;
+import com.minimalism.files.exceptions.ResourceAllocationException;
 import com.minimalism.files.exceptions.ServiceAbortedException;
 import com.minimalism.files.service.output.kafka.Publisher;
 
@@ -55,11 +58,11 @@ public class Reader {
     BrokerConfiguration brokerConfiguration;
     IngestServiceSummary ingestionSummary;
 
-    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException {
+    public Reader(IngestorContext context, boolean headerPresent) throws NoSuchPathException, ResourceAllocationException {
         serviceContext = context;
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
-        var slicer = new Slicer();
-        this.slicerConfguration = slicer.sliceFile(serviceContext);
+        var slicer = new Slicer(this.serviceContext);
+        this.slicerConfguration = slicer.sliceFile();
         this.ingestionSummary = new IngestServiceSummary();
         this.ingestionSummary.setFileName(this.serviceContext.getInputFileInformation().getFileName());
         this.ingestionSummary.setRecordName(this.serviceContext.getRecordName());
@@ -67,15 +70,15 @@ public class Reader {
         setupOutput();
     }
 
-    public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException, RecordDescriptorException, URISyntaxException {
+    public Reader(String clientName, String fileName, boolean headerPresent) throws InvalidFileException, FileTypeNotSupportedException, IOException, NoSuchPathException, RecordDescriptorException, URISyntaxException, ResourceAllocationException {
         
         // We expect the filename is the input file that must be processed. It must have a file name and
         // an extension
         this.serviceContext = new IngestorContext(clientName, fileName);
         this.serviceContext.getInputFileInformation().setHeaderPresent(headerPresent);
 
-        var slicer = new Slicer();
-        this.slicerConfguration = slicer.sliceFile(this.serviceContext);
+        var slicer = new Slicer(this.serviceContext);
+        this.slicerConfguration = slicer.sliceFile();
         this.ingestionSummary = new IngestServiceSummary();
         this.ingestionSummary.setFileName(this.serviceContext.getInputFileInformation().getFileName());
         this.ingestionSummary.setRecordName(this.serviceContext.getRecordName());
@@ -83,7 +86,7 @@ public class Reader {
         setupOutput();
     }
 
-    public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException, RecordDescriptorException, URISyntaxException {
+    public Reader(String clientName, String path, String fileName, boolean headerPresent) throws FileTypeNotSupportedException, NoSuchPathException, InvalidFileException, IOException, RecordDescriptorException, URISyntaxException, ResourceAllocationException {
         this(clientName, Paths.get(path).resolve(fileName).toString(), headerPresent);
     }
     
@@ -217,7 +220,7 @@ public class Reader {
      * @throws ServiceAbortedException
      * @throws URISyntaxException
      */
-    private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
+     private void sliceAndProcessFile(FileTypes fileType) throws IOException, InterruptedException, NoSuchPathException, ServiceAbortedException {
         int bufferSize = slicerConfguration.getThreadReadBufferSize();
         int numberOfBuffers = slicerConfguration.getNumberOfThreads();
         long thisBatchOffsetInFile = 0;
@@ -272,6 +275,7 @@ public class Reader {
                         resultsFromWorkers.stream().forEach(rfws -> this.ingestionSummary.addStat(rfws.getIterationStatistics()));
                     } else {
                         // if thread has aborted, many records are lost! Abort this batch!
+
                         throw new ServiceAbortedException("One or more threads aborted with an exception.");
                     }
                 } else {
@@ -415,9 +419,11 @@ public class Reader {
 
     private void publishRecords(List<InputEntity> records) {
         if(this.serviceContext.getDestinationType() == DataSources.KAFKA) {
-            var kafkaPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
+            //TO DO... use DI to get configured IPublish instance (for valid and invalid records)
+            var validEntitiesPublisher = new Publisher(this.brokerConfiguration, this.serviceContext);
+            Map<Boolean, List<InputEntity>> validatedEntities = records.stream().collect(Collectors.partitioningBy(InputEntity::isValid));
             try {
-                kafkaPublisher.publish(records);
+                validEntitiesPublisher.publish(validatedEntities.get(true));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -436,7 +442,7 @@ public class Reader {
                 case KAFKA:
                     BrokerConfigurationReader brokerConfigurationReader = 
                     new BrokerConfigurationReader(this.serviceContext.getClientName(), 
-                    this.serviceContext.getRecordName());
+                    this.serviceContext.getRecordName(), "kafka");
                     this.brokerConfiguration = brokerConfigurationReader.getBrokerConfiguration(); 
                 break;
                 case NTFS:

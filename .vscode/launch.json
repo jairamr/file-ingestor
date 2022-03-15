@@ -10,7 +10,7 @@
             "request": "launch",
             "mainClass": "com.minimalism.FileSlicerDicer",
             "projectName": "file-ingestor",
-            "args": "client_1 _hrdata_kaggle_hr10t.csv hrdata true"
+            "args": "client_1 _hrdata_kaggle_hr1m.csv hrdata true"
         },
         {
             "type": "java",

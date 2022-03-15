@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 
 import com.minimalism.shared.common.AllEnums.Directories;
 import com.minimalism.shared.exceptions.NoSuchPathException;
-import com.minimalism.files.domain.InputOutputFileSystem;
+import com.minimalism.shared.service.InputOutputFileSystem;
 
 import org.junit.jupiter.api.Test;
 

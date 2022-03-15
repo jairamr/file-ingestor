@@ -121,8 +121,8 @@ public class ResidualBufferBytesHandler {
             }
         }
         // save the postamble bytes to be processed in the next iteration
-        var lastPostAmble = iterationResults.get(iterationResults.size() - 1).getUnprocessedPostamble();
-        if(lastPostAmble != null) {
+        byte[] lastPostAmble = iterationResults.get(iterationResults.size() - 1).getUnprocessedPostamble();
+        if(lastPostAmble.length > 0) {
             if(lastIteration) {
                 this.residualRecords.add(removeRecordSeparators(lastPostAmble));
             } else {
@@ -156,16 +156,20 @@ public class ResidualBufferBytesHandler {
         }
         
         // save the postamble bytes to be processed in the next iteration
-        var lastPostAmble = iterationResult.getUnprocessedPostamble();
-        if(lastPostAmble != null) {
+        byte[] lastPostAmble = iterationResult.getUnprocessedPostamble();
+        if(lastPostAmble.length > 0) {
             if(lastIteration) {
-                this.residualRecords.add(removeRecordSeparators(lastPostAmble));
+                ByteArrayOutputStream trailerBytes = removeRecordSeparators(lastPostAmble);
+                if(trailerBytes.size() > 0) {
+                    this.residualRecords.add(removeRecordSeparators(lastPostAmble));
+                }
             } else {
                 leftOversForNextIteration = lastPostAmble;
             }
-        } else {
-            leftOversForNextIteration = new byte[0];
         }
+        // } else {
+        //     leftOversForNextIteration = new byte[0];
+        // }
         return leftOversForNextIteration;
     }
 
