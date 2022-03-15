@@ -16,3 +16,5 @@ The number of threads started by the app depends on the numbrer of available cor
 > You can register a new client with the **Setup** utility. It will build the necessary folder structure.
 
 Each parsed record is then formatted into an Avro Generic Object and published using a Kafka Publisher. The CustomAvroSerializer class uses the MockSchemaRegistryClient, to avoid registering the Avro Schem for Entity objects (you may wany to change this)
+
+This project has a dependency on a shared library available here...https://github.com/jairamr/file-slice-and-dice-shared
